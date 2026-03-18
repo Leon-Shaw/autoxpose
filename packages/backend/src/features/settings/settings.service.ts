@@ -173,4 +173,8 @@ export class SettingsService {
     const dnsConfig = await this.getDnsConfig();
     return dnsConfig?.config.domain ?? null;
   }
+
+  async clearAllConfig(): Promise<number> {
+    return this.repository.deleteAll();
+  }
 }

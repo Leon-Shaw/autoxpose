@@ -79,6 +79,11 @@ export class SettingsRepository {
     return result.changes > 0;
   }
 
+  async deleteAll(): Promise<number> {
+    const result = await this.db.delete(schema.providerConfigs);
+    return result.changes;
+  }
+
   async getWildcardConfig(): Promise<WildcardConfig | null> {
     const record = await this.getByType('wildcard');
     if (!record) return null;

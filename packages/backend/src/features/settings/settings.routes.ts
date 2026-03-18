@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { detectPlatform } from '../../core/platform.js';
+import type { ServicesRepository } from '../services/services.repository.js';
 import type { SettingsService } from './settings.service.js';
 import { testDnsProvider, testProxyProvider } from './validation.js';
 import { NpmProxyProvider } from '../proxy/providers/npm.js';
@@ -80,15 +81,31 @@ function formatProxyConfig(cfg: ParsedConfig): ProxyConfigResponse {
   return { configured: true, provider: cfg.provider, config: cfg.config };
 }
 
-export function createSettingsRoutes(settings: SettingsService): FastifyPluginAsync {
+export function createSettingsRoutes(
+  settings: SettingsService,
+  servicesRepo: ServicesRepository
+): FastifyPluginAsync {
   return async server => {
     registerDnsRoutes(server, settings);
     registerProxyRoutes(server, settings);
     registerWildcardRoutes(server, settings);
     registerStatusRoute(server, settings);
     registerTestRoutes(server, settings);
+    registerResetRoutes(server, settings, servicesRepo);
     registerExportImportRoutes(server, settings);
   };
+}
+
+function registerResetRoutes(
+  server: Parameters<FastifyPluginAsync>[0],
+  settings: SettingsService,
+  servicesRepo: ServicesRepository
+): void {
+  server.post('/reset', async () => {
+    const clearedSettings = await settings.clearAllConfig();
+    const clearedServices = await servicesRepo.deleteAll();
+    return { success: true, clearedSettings, clearedServices };
+  });
 }
 
 function registerDnsRoutes(
@@ -209,6 +226,19 @@ function registerWildcardRoutes(
       username: proxyCfg.config.username,
       password: proxyCfg.config.password,
     });
+
+    const preferredDomain = await settings.getBaseDomainFromAnySource();
+    if (preferredDomain) {
+      const exactMatch = await npm.findWildcardCertificate(preferredDomain);
+      if (exactMatch) {
+        return {
+          detected: true,
+          domain: preferredDomain,
+          certId: exactMatch.id,
+          fullDomain: exactMatch.domain,
+        };
+      }
+    }
 
     await npm['authenticate']();
     type Cert = { id: number; domain_names: string[] };

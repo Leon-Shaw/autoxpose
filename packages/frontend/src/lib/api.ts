@@ -172,14 +172,16 @@ export const api = {
       request<{ success: boolean; error?: string }>(`/services/${id}/retry-ssl`, {
         method: 'POST',
       }),
-    sync: (id: string): Promise<{ service: ServiceRecord; synced: boolean }> =>
-      request<{ service: ServiceRecord; synced: boolean }>(`/services/sync/${id}`, {
-        method: 'POST',
-      }),
-    fixConfig: (id: string): Promise<{ fixed: string[]; errors: string[] }> =>
-      request<{ fixed: string[]; errors: string[] }>(`/services/${id}/fix-config`, {
-        method: 'POST',
-      }),
+    sync: (id: string): Promise<{ service: ServiceRecord }> =>
+      request<{ service: ServiceRecord }>(`/services/sync/${id}`, { method: 'POST' }),
+    migrate: (
+      id: string,
+      targetSubdomain: string
+    ): Promise<{ service: ServiceRecord; oldSubdomain: string; newSubdomain: string }> =>
+      request<{ service: ServiceRecord; oldSubdomain: string; newSubdomain: string }>(
+        `/services/${id}/migrate`,
+        { method: 'POST', body: JSON.stringify({ targetSubdomain }) }
+      ),
     migrateSubdomain: (
       id: string,
       targetSubdomain: string
@@ -255,6 +257,18 @@ export const api = {
       request<{ success: boolean; config: WildcardConfig }>('/settings/wildcard', {
         method: 'POST',
         body: JSON.stringify({ enabled, domain }),
+      }),
+    reset: (): Promise<{
+      success: boolean;
+      clearedSettings: number;
+      clearedServices: number;
+    }> =>
+      request<{
+        success: boolean;
+        clearedSettings: number;
+        clearedServices: number;
+      }>('/settings/reset', {
+        method: 'POST',
       }),
   },
 };
