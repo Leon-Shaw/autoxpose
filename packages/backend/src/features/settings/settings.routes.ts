@@ -7,6 +7,12 @@ import { NpmProxyProvider } from '../proxy/providers/npm.js';
 type ProviderBody = { provider: string; config: Record<string, string> };
 type ParsedConfig = { provider: string; config: Record<string, string> } | null;
 
+function hasProviderConfig(body: unknown): body is ProviderBody {
+  if (!body || typeof body !== 'object') return false;
+  const value = body as { provider?: unknown; config?: unknown };
+  return typeof value.provider === 'string' && !!value.config && typeof value.config === 'object';
+}
+
 function maskSecret(value: string | undefined): string {
   if (!value) return '';
   if (value.length <= 8) return '••••••••';
@@ -91,7 +97,11 @@ function registerDnsRoutes(
 ): void {
   server.get('/dns', async () => formatDnsConfig(await settings.getDnsConfig()));
 
-  server.post<{ Body: ProviderBody }>('/dns', async request => {
+  server.post<{ Body: ProviderBody }>('/dns', async (request, reply) => {
+    if (!hasProviderConfig(request.body)) {
+      reply.code(400);
+      return { success: false, error: 'Invalid DNS config payload' };
+    }
     await settings.saveDnsConfig(request.body.provider, request.body.config);
     const cfg = await settings.getDnsConfig();
     if (!cfg) return { success: true, validation: { ok: false, error: 'Failed to load config' } };
@@ -109,7 +119,11 @@ function registerProxyRoutes(
 ): void {
   server.get('/proxy', async () => formatProxyConfig(await settings.getProxyConfig()));
 
-  server.post<{ Body: ProviderBody }>('/proxy', async request => {
+  server.post<{ Body: ProviderBody }>('/proxy', async (request, reply) => {
+    if (!hasProviderConfig(request.body)) {
+      reply.code(400);
+      return { success: false, error: 'Invalid proxy config payload' };
+    }
     const config = { ...request.body.config };
     if (config.url && !config.url.startsWith('http')) {
       config.url = `http://${config.url}`;

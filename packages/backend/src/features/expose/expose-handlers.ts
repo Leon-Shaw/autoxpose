@@ -95,6 +95,10 @@ type DnsExposeParams = {
 };
 export async function handleDnsExpose(p: DnsExposeParams): Promise<DnsExposeResult> {
   const { ctx, svc, settings, publicIp, fullDomain } = p;
+  if (await settings.isWildcardMode()) {
+    emitSkipped(ctx, 'dns', 'Skipped (wildcard mode)');
+    return { recordId: undefined, propagationSuccess: true, globalVerified: true };
+  }
   if (svc.dnsRecordId) {
     emitSkipped(ctx, 'dns', 'Already configured');
     return { recordId: svc.dnsRecordId, propagationSuccess: true, globalVerified: true };
@@ -279,7 +283,8 @@ export async function handleDnsUnexpose(
     return true;
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'DNS error';
-    emitStepError(ctx, 'dns', msg, 'DNS removal failed');
+    ctx.steps = updateStep(ctx.steps, 'dns', { status: 'error', progress: 100, detail: msg });
+    emit(ctx);
     return false;
   }
 }
@@ -301,7 +306,8 @@ export async function handleProxyUnexpose(
     return true;
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Proxy error';
-    emitStepError(ctx, 'proxy', msg, 'Proxy removal failed');
+    ctx.steps = updateStep(ctx.steps, 'proxy', { status: 'error', progress: 100, detail: msg });
+    emit(ctx);
     return false;
   }
 }

@@ -2,6 +2,14 @@
 
 All notable changes to autoxpose will be documented in this file.
 
+## [0.4.1] - 2026-03-18
+
+### Fixed
+
+- **[wildcard][cloudflare][settings]** Wildcard mode is now more reliable and easier to trust when exposing or removing apps.
+  - Apps exposed in wildcard mode no longer create extra Cloudflare subdomain records.
+  - Saving settings is safer, and app cleanup can still finish even if DNS removal fails.
+
 ## [0.4.0] - 2026-02-04
 
 ### Added
