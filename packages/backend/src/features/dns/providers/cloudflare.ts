@@ -7,10 +7,12 @@ export class CloudflareDnsProvider implements DnsProvider {
   readonly name = 'cloudflare';
   private token: string;
   private zoneId: string;
+  private domain: string;
 
   constructor(config: DnsProviderConfig) {
     this.token = config.token;
     this.zoneId = config.zoneId || '';
+    this.domain = config.domain || '';
   }
 
   async createRecord(input: CreateRecordInput): Promise<DnsRecord> {
@@ -31,9 +33,18 @@ export class CloudflareDnsProvider implements DnsProvider {
   }
 
   async deleteRecord(recordId: string): Promise<void> {
-    await this.request(`/zones/${this.zoneId}/dns_records/${recordId}`, {
-      method: 'DELETE',
-    });
+    const path = `/zones/${this.zoneId}/dns_records/${recordId}`;
+    const result = await this.requestWithMeta(path, { method: 'DELETE' });
+    if (result.ok) return;
+    if (this.shouldUseBatchDelete(result.status, result.data)) {
+      await this.request(`/zones/${this.zoneId}/dns/records/batch`, {
+        method: 'POST',
+        body: JSON.stringify({ deletes: [{ id: recordId }] }),
+      });
+      return;
+    }
+    const msg = this.getErrorMessage(result.status, path, result.data);
+    throw new ProviderError('cloudflare', msg);
   }
 
   async listRecords(): Promise<DnsRecord[]> {
@@ -44,13 +55,31 @@ export class CloudflareDnsProvider implements DnsProvider {
   }
 
   async findByHostname(hostname: string): Promise<DnsRecord | null> {
+    const target = this.buildHostname(hostname);
     const records = await this.listRecords();
     return (
-      records.find(r => r.hostname === hostname && (r.type === 'A' || r.type === 'CNAME')) ?? null
+      records.find(
+        r =>
+          (r.type === 'A' || r.type === 'CNAME') &&
+          (this.matchesHostname(r.hostname, target) || this.matchesHostname(r.hostname, hostname))
+      ) ?? null
     );
   }
 
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const result = await this.requestWithMeta<T>(path, options);
+    if (!result.ok) {
+      const msg = this.getErrorMessage(result.status, path, result.data);
+      throw new ProviderError('cloudflare', msg);
+    }
+
+    return result.data as T;
+  }
+
+  private async requestWithMeta<T>(
+    path: string,
+    options: RequestInit = {}
+  ): Promise<{ ok: boolean; status: number; data: CloudflareResponse<T> }> {
     const response = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers: {
@@ -60,25 +89,50 @@ export class CloudflareDnsProvider implements DnsProvider {
       },
     });
 
-    const data = await response.json();
-
-    if (!response.ok || !(data as { success?: boolean }).success) {
-      const msg = this.getErrorMessage(response.status, path);
-      throw new ProviderError('cloudflare', msg);
-    }
-
-    return data as T;
+    const data = (await response.json()) as CloudflareResponse<T>;
+    const ok = response.ok && data.success === true;
+    return { ok, status: response.status, data };
   }
 
-  private getErrorMessage(status: number, path: string): string {
+  private getErrorMessage(
+    status: number,
+    path: string,
+    data?: CloudflareResponse<unknown>
+  ): string {
     const isZoneOp = path.includes('/zones/');
+    const apiMessage = this.getApiMessage(data);
     if (status === 404 && isZoneOp) {
       return 'DNS Zone not found. Verify your Zone ID in Cloudflare.';
     }
     if (status === 404) return 'Resource not found. Check your configuration.';
     if (status === 401) return 'Invalid API token. Check your credentials.';
     if (status === 403) return 'Insufficient permissions. Token needs Zone:DNS:Edit access.';
+    if (apiMessage) return apiMessage;
     return `Connection failed (HTTP ${status}).`;
+  }
+
+  private getApiMessage(data?: CloudflareResponse<unknown>): string | null {
+    const message = data?.errors?.[0]?.message;
+    return typeof message === 'string' && message.length > 0 ? message : null;
+  }
+
+  private shouldUseBatchDelete(status: number, data: CloudflareResponse<unknown>): boolean {
+    return (
+      status === 405 &&
+      this.getApiMessage(data) ===
+        'DELETE method not allowed for the api_token authentication scheme'
+    );
+  }
+
+  private buildHostname(hostname: string): string {
+    if (!this.domain || hostname.includes('.')) return hostname;
+    return `${hostname}.${this.domain}`;
+  }
+
+  private matchesHostname(actual: string, expected: string): boolean {
+    const cleanActual = actual.toLowerCase().replace(/\.$/, '');
+    const cleanExpected = expected.toLowerCase().replace(/\.$/, '');
+    return cleanActual === cleanExpected;
   }
 
   private mapRecord(raw: Record<string, unknown>): DnsRecord {
@@ -91,3 +145,9 @@ export class CloudflareDnsProvider implements DnsProvider {
     };
   }
 }
+
+type CloudflareResponse<T> = {
+  success?: boolean;
+  result?: T;
+  errors?: Array<{ code?: number; message?: string }>;
+};

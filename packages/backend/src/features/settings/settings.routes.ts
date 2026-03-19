@@ -1,11 +1,18 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { detectPlatform } from '../../core/platform.js';
+import type { ServicesRepository } from '../services/services.repository.js';
 import type { SettingsService } from './settings.service.js';
 import { testDnsProvider, testProxyProvider } from './validation.js';
 import { NpmProxyProvider } from '../proxy/providers/npm.js';
 
 type ProviderBody = { provider: string; config: Record<string, string> };
 type ParsedConfig = { provider: string; config: Record<string, string> } | null;
+
+function hasProviderConfig(body: unknown): body is ProviderBody {
+  if (!body || typeof body !== 'object') return false;
+  const value = body as { provider?: unknown; config?: unknown };
+  return typeof value.provider === 'string' && !!value.config && typeof value.config === 'object';
+}
 
 function maskSecret(value: string | undefined): string {
   if (!value) return '';
@@ -74,15 +81,31 @@ function formatProxyConfig(cfg: ParsedConfig): ProxyConfigResponse {
   return { configured: true, provider: cfg.provider, config: cfg.config };
 }
 
-export function createSettingsRoutes(settings: SettingsService): FastifyPluginAsync {
+export function createSettingsRoutes(
+  settings: SettingsService,
+  servicesRepo: ServicesRepository
+): FastifyPluginAsync {
   return async server => {
     registerDnsRoutes(server, settings);
     registerProxyRoutes(server, settings);
     registerWildcardRoutes(server, settings);
     registerStatusRoute(server, settings);
     registerTestRoutes(server, settings);
+    registerResetRoutes(server, settings, servicesRepo);
     registerExportImportRoutes(server, settings);
   };
+}
+
+function registerResetRoutes(
+  server: Parameters<FastifyPluginAsync>[0],
+  settings: SettingsService,
+  servicesRepo: ServicesRepository
+): void {
+  server.post('/reset', async () => {
+    const clearedSettings = await settings.clearAllConfig();
+    const clearedServices = await servicesRepo.deleteAll();
+    return { success: true, clearedSettings, clearedServices };
+  });
 }
 
 function registerDnsRoutes(
@@ -91,7 +114,11 @@ function registerDnsRoutes(
 ): void {
   server.get('/dns', async () => formatDnsConfig(await settings.getDnsConfig()));
 
-  server.post<{ Body: ProviderBody }>('/dns', async request => {
+  server.post<{ Body: ProviderBody }>('/dns', async (request, reply) => {
+    if (!hasProviderConfig(request.body)) {
+      reply.code(400);
+      return { success: false, error: 'Invalid DNS config payload' };
+    }
     await settings.saveDnsConfig(request.body.provider, request.body.config);
     const cfg = await settings.getDnsConfig();
     if (!cfg) return { success: true, validation: { ok: false, error: 'Failed to load config' } };
@@ -109,7 +136,11 @@ function registerProxyRoutes(
 ): void {
   server.get('/proxy', async () => formatProxyConfig(await settings.getProxyConfig()));
 
-  server.post<{ Body: ProviderBody }>('/proxy', async request => {
+  server.post<{ Body: ProviderBody }>('/proxy', async (request, reply) => {
+    if (!hasProviderConfig(request.body)) {
+      reply.code(400);
+      return { success: false, error: 'Invalid proxy config payload' };
+    }
     const config = { ...request.body.config };
     if (config.url && !config.url.startsWith('http')) {
       config.url = `http://${config.url}`;
@@ -195,6 +226,19 @@ function registerWildcardRoutes(
       username: proxyCfg.config.username,
       password: proxyCfg.config.password,
     });
+
+    const preferredDomain = await settings.getBaseDomainFromAnySource();
+    if (preferredDomain) {
+      const exactMatch = await npm.findWildcardCertificate(preferredDomain);
+      if (exactMatch) {
+        return {
+          detected: true,
+          domain: preferredDomain,
+          certId: exactMatch.id,
+          fullDomain: exactMatch.domain,
+        };
+      }
+    }
 
     await npm['authenticate']();
     type Cert = { id: number; domain_names: string[] };

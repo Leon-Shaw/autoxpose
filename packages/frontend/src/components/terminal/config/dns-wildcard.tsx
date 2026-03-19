@@ -1,5 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { api, type WildcardConfig, type WildcardDetection } from '../../../lib/api';
+import { wildcardDetectionMatchesDomain } from '../../../lib/wildcard-domain';
+import { FormInput } from '../form-components';
 import { TERMINAL_COLORS } from '../theme';
 
 interface DnsHeaderProps {
@@ -107,35 +110,139 @@ export function WildcardModeDisplay({
 }
 
 interface WildcardChoiceSectionProps {
-  wildcardDetection: WildcardDetection;
+  wildcardDetection?: WildcardDetection | null;
+  currentDomain?: string | null;
+  isConfigured: boolean;
+}
+
+interface WildcardChoiceCopy {
+  intro: JSX.Element;
+  mismatchNote: JSX.Element | null;
+  showDomainInput: boolean;
+}
+
+function shouldShowWildcardChoice(
+  wildcardDetection?: WildcardDetection | null,
+  currentDomain?: string | null,
+  isConfigured?: boolean
+): boolean {
+  return Boolean(wildcardDetection?.detected || currentDomain || isConfigured);
+}
+
+function wildcardIntro(copy: WildcardChoiceCopy): JSX.Element {
+  return copy.intro;
+}
+
+function wildcardActionLabel(isPending: boolean, isConfigured: boolean): string {
+  if (isPending) return 'Switching...';
+  return isConfigured ? 'Enable wildcard' : 'Use wildcard';
+}
+
+function getWildcardChoiceCopy(
+  wildcardDetection: WildcardDetection | null | undefined,
+  currentDomain: string | null | undefined,
+  isConfigured: boolean,
+  matchesCurrentDomain: boolean
+): WildcardChoiceCopy {
+  if (matchesCurrentDomain) {
+    return {
+      intro: (
+        <>
+          Wildcard ready: <span className="font-mono">{wildcardDetection?.fullDomain}</span>
+        </>
+      ),
+      mismatchNote: null,
+      showDomainInput: false,
+    };
+  }
+
+  if (wildcardDetection?.detected && currentDomain) {
+    return {
+      intro: (
+        <>
+          NPM wildcard: <span className="font-mono">*.{wildcardDetection.domain}</span>
+        </>
+      ),
+      mismatchNote: (
+        <>
+          This setup would use <span className="font-mono">*.{currentDomain}</span>.
+        </>
+      ),
+      showDomainInput: false,
+    };
+  }
+
+  return {
+    intro: isConfigured ? (
+      <>Switch this domain to wildcard mode</>
+    ) : (
+      <>Use wildcard instead of one DNS record per app</>
+    ),
+    mismatchNote: null,
+    showDomainInput: !currentDomain,
+  };
 }
 
 export function WildcardChoiceSection({
   wildcardDetection,
+  currentDomain,
+  isConfigured,
 }: WildcardChoiceSectionProps): JSX.Element | null {
   const queryClient = useQueryClient();
+  const preferredDomain = currentDomain || wildcardDetection?.domain || '';
+  const [domain, setDomain] = useState(preferredDomain);
+  const matchesCurrentDomain = wildcardDetectionMatchesDomain(
+    wildcardDetection?.domain,
+    currentDomain
+  );
+  const choiceCopy = getWildcardChoiceCopy(
+    wildcardDetection,
+    currentDomain,
+    isConfigured,
+    matchesCurrentDomain
+  );
+
+  useEffect(() => {
+    setDomain(preferredDomain);
+  }, [preferredDomain]);
 
   const enableMutation = useMutation({
-    mutationFn: () => api.settings.saveWildcard(true, wildcardDetection.domain || ''),
+    mutationFn: () => api.settings.saveWildcard(true, domain.trim()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
       queryClient.invalidateQueries({ queryKey: ['wildcard-detection'] });
     },
   });
 
-  if (!wildcardDetection.detected) return null;
+  const hasDomain = domain.trim().length > 0;
+
+  if (!shouldShowWildcardChoice(wildcardDetection, currentDomain, isConfigured)) return null;
 
   return (
     <div className="mb-4 rounded border border-[#238636] bg-[#23863615] p-3">
-      <p className="mb-2 text-xs text-[#3fb950]">
-        Wildcard detected: <span className="font-mono">{wildcardDetection.fullDomain}</span>
+      <p className="mb-2 text-xs text-[#3fb950]">{wildcardIntro(choiceCopy)}</p>
+      {choiceCopy.mismatchNote && (
+        <p className="mb-3 text-xs text-[#8b949e]">{choiceCopy.mismatchNote}</p>
+      )}
+      {choiceCopy.showDomainInput && (
+        <div className="mb-3">
+          <FormInput
+            label="Wildcard domain"
+            placeholder="example.com"
+            value={domain}
+            onChange={setDomain}
+          />
+        </div>
+      )}
+      <p className="mb-2 text-xs text-[#8b949e]">
+        Wildcard uses <span className="font-mono">*.{domain || 'domain.com'}</span> instead.
       </p>
       <button
         onClick={() => enableMutation.mutate()}
-        disabled={enableMutation.isPending}
+        disabled={enableMutation.isPending || !hasDomain}
         className="text-xs text-[#58a6ff] hover:underline disabled:opacity-50"
       >
-        {enableMutation.isPending ? 'Enabling...' : 'Use wildcard mode (skip DNS setup)'}
+        {wildcardActionLabel(enableMutation.isPending, isConfigured)}
       </button>
     </div>
   );

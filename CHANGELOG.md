@@ -2,6 +2,15 @@
 
 All notable changes to autoxpose will be documented in this file.
 
+## [0.4.1] - 2026-03-18
+
+### Fixed
+
+- **Wildcard Mode**: More reliable expose and settings behavior
+  - **[sub]** No per-app DNS records are created in wildcard mode
+  - **[sub]** Wildcard detection now prefers the active app domain in NPM
+  - **[sub]** Settings reset and cleanup are safer
+
 ## [0.4.0] - 2026-02-04
 
 ### Added

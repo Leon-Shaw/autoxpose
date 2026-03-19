@@ -6,6 +6,7 @@ import { type ServiceRecord } from '../../lib/api';
 import { CommandConsole } from './command-console';
 import { type useTerminalActions } from './use-terminal-actions';
 import type { ExposeStreamState } from '../../hooks/use-expose-stream';
+import { WildcardModeHint } from './wildcard-mode-hint';
 
 interface ContentAreaProps {
   services: ServiceRecord[];
@@ -42,6 +43,12 @@ export function ContentArea(props: ContentAreaProps): JSX.Element {
     <div className="space-y-6">
       <CommandPrompt command={`autoxpose status --services ${services.length}`} />
       {state.scanMutation.isSuccess && <ScanSuccessNotice data={state.scanMutation.data} />}
+      <WildcardModeHint
+        services={services}
+        baseDomain={baseDomain}
+        isWildcardMode={isWildcardMode}
+        isDnsConfigured={settingsData?.dns?.configured ?? false}
+      />
       <TagFilters
         selectedTags={selectedTags}
         onTagsChange={setSelectedTags}

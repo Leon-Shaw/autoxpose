@@ -147,16 +147,23 @@ export class StreamingExposeService {
     const fullDomain = this.buildFullDomain(service.subdomain, baseDomain);
 
     const dnsOk = await handleDnsUnexpose(ctx, service.dnsRecordId, this.settings);
-    if (!dnsOk) return;
-
     const proxyOk = await handleProxyUnexpose(ctx, service.proxyHostId, this.settings);
-    if (!proxyOk) return;
 
     await this.servicesRepo.update(serviceId, {
       enabled: false,
-      dnsRecordId: null,
-      proxyHostId: null,
+      dnsRecordId: dnsOk ? null : service.dnsRecordId,
+      proxyHostId: proxyOk ? null : service.proxyHostId,
     });
+
+    if (!dnsOk || !proxyOk) {
+      const failures = [
+        !dnsOk ? 'DNS removal failed' : null,
+        !proxyOk ? 'Proxy removal failed' : null,
+      ].filter(Boolean);
+      emitError(ctx, failures.join('. '));
+      return;
+    }
+
     emitComplete(ctx, fullDomain, {});
   }
 

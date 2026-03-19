@@ -149,4 +149,12 @@ export class ServicesRepository {
     }
     return result.changes > 0;
   }
+
+  async deleteAll(): Promise<number> {
+    const result = await this.db.delete(schema.services);
+    if (result.changes > 0) {
+      this.changeTracker.increment();
+    }
+    return result.changes;
+  }
 }

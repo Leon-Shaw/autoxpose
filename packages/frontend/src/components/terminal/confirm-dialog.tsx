@@ -9,6 +9,7 @@ interface ConfirmDialogProps {
   checkboxLabel?: string;
   checkboxChecked?: boolean;
   onCheckboxChange?: (checked: boolean) => void;
+  confirmDisabled?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -32,6 +33,7 @@ export function ConfirmDialog({
   checkboxLabel,
   checkboxChecked = false,
   onCheckboxChange,
+  confirmDisabled = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps): JSX.Element | null {
@@ -65,7 +67,8 @@ export function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
-            className={`rounded px-4 py-2 text-sm font-medium text-white transition-colors ${CONFIRM_COLORS[variant]}`}
+            disabled={confirmDisabled}
+            className={`rounded px-4 py-2 text-sm font-medium text-white transition-colors ${CONFIRM_COLORS[variant]} disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {confirmText}
           </button>

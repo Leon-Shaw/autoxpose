@@ -46,9 +46,11 @@ export function DnsConfigSection({
         isWildcardMode={false}
         onEdit={() => setIsEditing(true)}
       />
-      {!isConfigured && wildcardDetection && (
-        <WildcardChoiceSection wildcardDetection={wildcardDetection} />
-      )}
+      <WildcardChoiceSection
+        wildcardDetection={wildcardDetection}
+        currentDomain={current?.domain ?? null}
+        isConfigured={isConfigured}
+      />
       {showDnsForm ? (
         <DnsEditForm current={current} onDone={() => setIsEditing(false)} />
       ) : (

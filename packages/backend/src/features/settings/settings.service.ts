@@ -33,30 +33,14 @@ export class SettingsService {
 
   async saveDnsConfig(provider: string, config: Record<string, string>): Promise<void> {
     const existing = await this.getDnsConfig();
-    const newConfig = { ...config };
-
-    if (existing) {
-      if (!newConfig.token || newConfig.token.includes('••••')) {
-        newConfig.token = existing.config.token;
-      }
-      if (!newConfig.apiKey || newConfig.apiKey.includes('••••')) {
-        newConfig.apiKey = existing.config.apiKey;
-      }
-      if (!newConfig.secretKey || newConfig.secretKey.includes('••••')) {
-        newConfig.secretKey = existing.config.secretKey;
-      }
-    }
+    const newConfig = this.mergeExistingConfig(existing, provider, config);
 
     await this.repository.save({ type: 'dns', provider, config: newConfig });
   }
 
   async saveProxyConfig(provider: string, config: Record<string, string>): Promise<void> {
     const existing = await this.getProxyConfig();
-    const newConfig = { ...config };
-
-    if (existing && (!newConfig.password || newConfig.password.includes('••••'))) {
-      newConfig.password = existing.config.password;
-    }
+    const newConfig = this.mergeExistingConfig(existing, provider, config);
 
     await this.repository.save({ type: 'proxy', provider, config: newConfig });
   }
@@ -101,7 +85,11 @@ export class SettingsService {
 
   private createDnsProvider(provider: string, cfg: Record<string, string>): DnsProvider | null {
     if (provider === 'cloudflare') {
-      return new CloudflareDnsProvider({ token: cfg.token, zoneId: cfg.zoneId });
+      return new CloudflareDnsProvider({
+        token: cfg.token,
+        zoneId: cfg.zoneId,
+        domain: cfg.domain,
+      });
     }
     if (provider === 'netlify') {
       return new NetlifyDnsProvider({
@@ -138,6 +126,24 @@ export class SettingsService {
     return { provider: record.provider, config: JSON.parse(record.config) };
   }
 
+  private mergeExistingConfig(
+    existing: ParsedConfig,
+    provider: string,
+    config: Record<string, string>
+  ): Record<string, string> {
+    const merged = { ...config };
+    if (!existing || existing.provider !== provider) return merged;
+
+    for (const [key, value] of Object.entries(existing.config)) {
+      const nextValue = merged[key];
+      if (!nextValue || nextValue.includes('••••')) {
+        merged[key] = value;
+      }
+    }
+
+    return merged;
+  }
+
   async getWildcardConfig(): Promise<WildcardConfig | null> {
     return this.repository.getWildcardConfig();
   }
@@ -166,5 +172,9 @@ export class SettingsService {
     }
     const dnsConfig = await this.getDnsConfig();
     return dnsConfig?.config.domain ?? null;
+  }
+
+  async clearAllConfig(): Promise<number> {
+    return this.repository.deleteAll();
   }
 }
