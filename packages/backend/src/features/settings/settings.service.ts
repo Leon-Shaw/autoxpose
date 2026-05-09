@@ -3,6 +3,7 @@ import { CloudflareDnsProvider } from '../dns/providers/cloudflare.js';
 import { DigitalOceanDnsProvider } from '../dns/providers/digitalocean.js';
 import { NetlifyDnsProvider } from '../dns/providers/netlify.js';
 import { PorkbunDnsProvider } from '../dns/providers/porkbun.js';
+import { AliyunDnsProvider } from '../dns/providers/aliyun.js';
 import { CaddyProxyProvider } from '../proxy/providers/caddy.js';
 import { NpmProxyProvider } from '../proxy/providers/npm.js';
 import type { ProxyProvider } from '../proxy/proxy.types.js';
@@ -106,6 +107,14 @@ export class SettingsService {
         token: cfg.apiKey,
         apiKey: cfg.apiKey,
         secretKey: cfg.secretKey,
+        domain: cfg.domain,
+      });
+    }
+    if (provider === 'aliyun') {
+      return new AliyunDnsProvider({
+        token: cfg.accessKeyId,
+        accessKeyId: cfg.accessKeyId,
+        accessKeySecret: cfg.accessKeySecret,
         domain: cfg.domain,
       });
     }

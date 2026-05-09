@@ -45,6 +45,9 @@ function formatDnsConfig(cfg: ParsedConfig): DnsConfigResponse {
   } else if (cfg.provider === 'porkbun') {
     baseConfig.apiKey = maskSecret(cfg.config.apiKey);
     baseConfig.secretKey = maskSecret(cfg.config.secretKey);
+  } else if (cfg.provider === 'aliyun') {
+    baseConfig.accessKeyId = maskSecret(cfg.config.accessKeyId);
+    baseConfig.accessKeySecret = maskSecret(cfg.config.accessKeySecret);
   }
 
   return {
