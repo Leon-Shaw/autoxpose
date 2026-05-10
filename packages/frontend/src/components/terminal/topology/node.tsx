@@ -1,6 +1,7 @@
 import { TERMINAL_COLORS } from '../theme';
 import { getProviderDisplayName, ProviderIcon } from '../provider-icons';
 import { Tooltip } from '../tooltip';
+import { useI18n } from '../../../hooks/use-i18n';
 
 interface TopologyNodeProps {
   emoji: string;
@@ -121,6 +122,7 @@ function BaseNode({
   provider,
   platformName,
 }: BaseNodeProps): JSX.Element {
+  const { t } = useI18n();
   const nodeClass = 'flex flex-col items-center gap-1 text-center';
   const labelClass = 'text-xs font-bold uppercase tracking-wider';
   const iconColor = labelColor || '#8b949e';
@@ -154,7 +156,7 @@ function BaseNode({
         )}
         {platformName && (
           <div className="mt-0.5 text-xs" style={{ color: '#8b949e' }}>
-            on {platformName}
+            {t('topology.on_platform', { platform: platformName })}
           </div>
         )}
       </div>
@@ -179,6 +181,7 @@ export function TopologyNode({
   provider,
   platformName,
 }: TopologyNodeProps): JSX.Element {
+  const { t } = useI18n();
   if (isDocker) {
     return (
       <BaseNode
@@ -207,7 +210,7 @@ export function TopologyNode({
         labelColor={bothConfigured ? TERMINAL_COLORS.success : '#8b949e'}
         statusText={statusText || ''}
         statusColor={bothConfigured ? TERMINAL_COLORS.success : TERMINAL_COLORS.error}
-        statusTooltip={bothConfigured ? 'Setup Complete' : 'Setup Incomplete'}
+        statusTooltip={bothConfigured ? t('topology.setup_complete') : t('topology.setup_incomplete')}
         provider={provider}
       />
     );
@@ -222,7 +225,7 @@ export function TopologyNode({
         labelColor={TERMINAL_COLORS.success}
         statusText="✓"
         statusColor={TERMINAL_COLORS.success}
-        statusTooltip="Configured"
+        statusTooltip={t('topology.configured')}
         provider={provider}
       />
     );
@@ -235,7 +238,7 @@ export function TopologyNode({
       borderStyle="rounded-lg border border-dashed border-[#30363d] bg-[#0d1117] px-3 py-2 opacity-50"
       statusText="✗"
       statusColor="#f85149"
-      statusTooltip="Not configured"
+      statusTooltip={t('topology.not_configured')}
       provider={provider}
     />
   );

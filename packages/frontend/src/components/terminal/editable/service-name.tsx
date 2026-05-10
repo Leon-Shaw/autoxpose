@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
 import { Tooltip } from '../tooltip';
+import { useI18n } from '../../../hooks/use-i18n';
 
 interface EditableServiceNameProps {
   value: string;
@@ -17,6 +18,7 @@ interface EditInputProps {
 }
 
 function EditInput(p: EditInputProps): JSX.Element {
+  const { t } = useI18n();
   return (
     <input
       ref={p.inputRef}
@@ -26,7 +28,7 @@ function EditInput(p: EditInputProps): JSX.Element {
       onBlur={p.onSave}
       onKeyDown={p.onKeyDown}
       className="w-full border-b border-[#58a6ff] bg-transparent text-[#c9d1d9] font-bold outline-none"
-      placeholder="service name"
+      placeholder={t('proxy.service_name_placeholder')}
     />
   );
 }
@@ -43,9 +45,10 @@ function DisplayState({
   showHover,
   onEdit,
 }: Omit<DisplayProps, 'containerName'>): JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-2">
-      <Tooltip content="Click to rename service">
+      <Tooltip content={t('service_status.click_to_rename_service')}>
         <button
           onClick={onEdit}
           className="flex items-center gap-1.5 text-[#c9d1d9] font-bold hover:text-[#58a6ff] transition-colors group/name"

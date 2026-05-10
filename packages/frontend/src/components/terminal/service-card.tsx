@@ -6,6 +6,7 @@ import { StatusBadge } from './service-card-status';
 import { TagBadge } from './tag-badge';
 import { TERMINAL_COLORS } from './theme';
 import { Tooltip } from './tooltip';
+import { useI18n } from '../../hooks/use-i18n';
 interface TerminalServiceCardProps {
   service: ServiceRecord;
   baseDomain: string | null;
@@ -103,6 +104,7 @@ function CardHeader({
   tags,
   onNameChange,
 }: CardHeaderProps): JSX.Element {
+  const { t } = useI18n();
   const parsedTags = tags ? JSON.parse(tags) : [];
 
   return (
@@ -114,7 +116,7 @@ function CardHeader({
           port={port}
           onChange={onNameChange}
         />
-        <Tooltip content="Internal port">
+        <Tooltip content={t('service_card.internal_port')}>
           <span className="text-xs text-[#8b949e]">:{port}</span>
         </Tooltip>
       </div>
@@ -151,6 +153,7 @@ interface CardFooterProps {
   isWildcardMode: boolean;
 }
 function CardFooter(props: CardFooterProps): JSX.Element {
+  const { t } = useI18n();
   const {
     service,
     serviceId,
@@ -181,7 +184,7 @@ function CardFooter(props: CardFooterProps): JSX.Element {
       />
       <div className="flex items-center gap-2">
         {isExposed && service.sslPending && (
-          <Tooltip content="Retry SSL certificate setup">
+          <Tooltip content={t('service_card.retry_ssl')}>
             <button
               onClick={onRetrySsl}
               disabled={isRetrySslPending}
@@ -189,7 +192,7 @@ function CardFooter(props: CardFooterProps): JSX.Element {
               style={{ color: TERMINAL_COLORS.warning }}
             >
               {isRetrySslPending && <InlineSpinner />}
-              Retry SSL
+              {t('service_card.retry_ssl')}
             </button>
           </Tooltip>
         )}
@@ -213,17 +216,18 @@ function DeleteButton({
   visible: boolean;
   onClick: () => void;
 }): JSX.Element {
+  const { t } = useI18n();
   const opacityClass = visible ? 'opacity-100' : 'opacity-0';
   return (
     <div className={`transition-opacity duration-200 ${opacityClass}`}>
-      <Tooltip content="Remove service">
+      <Tooltip content={t('service_card.remove_service')}>
         <button
           onClick={e => {
             e.stopPropagation();
             onClick();
           }}
           className="flex h-6 w-6 items-center justify-center rounded text-[#8b949e] transition-colors hover:bg-[#f8514920] hover:text-[#f85149]"
-          aria-label="Delete service"
+          aria-label={t('service_card.remove_service')}
         >
           x
         </button>
@@ -247,10 +251,11 @@ function ExposeButton({
   canExposeBlockedReason,
   onClick,
 }: ExposeButtonProps): JSX.Element {
+  const { t } = useI18n();
   const disabled = isLoading || !canAct;
-  const tip = getTip(isExposed, canAct, canExposeBlockedReason);
+  const tip = getTip(isExposed, canAct, canExposeBlockedReason, t);
   const icon = isExposed ? '\u25A0' : '\u25B6';
-  const label = isExposed ? 'Stop service' : 'Start service';
+  const label = isExposed ? t('service_card.stop_service') : t('service_card.start_service');
 
   return (
     <Tooltip content={tip}>
@@ -267,7 +272,7 @@ function ExposeButton({
   );
 }
 
-function getTip(isExposed: boolean, canAct: boolean, canExposeBlockedReason?: string): string {
-  if (!canAct) return canExposeBlockedReason || 'Set subdomain and configure DNS/Proxy first';
-  return isExposed ? 'Unexpose service' : 'Expose service';
+function getTip(isExposed: boolean, canAct: boolean, canExposeBlockedReason: string | undefined, t: (key: string) => string): string {
+  if (!canAct) return canExposeBlockedReason || t('service_card.set_subdomain_first');
+  return isExposed ? t('service_card.unexpose_service') : t('service_card.expose_service');
 }

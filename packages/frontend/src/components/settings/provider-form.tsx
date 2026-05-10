@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useI18n } from '../../hooks/use-i18n';
 
 type Props = {
   providers: string[];
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function ProviderForm(props: Props): JSX.Element {
+  const { t } = useI18n();
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     props.onSubmit();
@@ -37,10 +39,10 @@ export function ProviderForm(props: Props): JSX.Element {
         disabled={props.isPending}
         className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {props.isPending ? 'Saving...' : props.buttonText}
+        {props.isPending ? t('common.saving') : props.buttonText}
       </button>
-      {props.isSuccess && <p className="text-sm text-emerald-600">Saved!</p>}
-      {props.isError && <p className="text-sm text-red-600">Failed to save</p>}
+      {props.isSuccess && <p className="text-sm text-emerald-600">{t('settings.saved')}</p>}
+      {props.isError && <p className="text-sm text-red-600">{t('settings.failed_to_save')}</p>}
     </form>
   );
 }

@@ -1,6 +1,9 @@
 import { api, type ServiceRecord, type SettingsStatus } from '../../lib/api';
 import { getLuckyLine } from './command-lucky';
 import { resolveService } from './command-utils';
+import i18n from '../../i18n';
+
+const t = i18n.t.bind(i18n);
 
 export type CommandTone = 'info' | 'success' | 'error' | 'muted';
 
@@ -53,7 +56,7 @@ const SIMPLE_HANDLERS: HandlerMap = {
     lines: [statusLine(ctx.services, ctx.settings)],
   }),
   config: (): CommandResult => ({
-    lines: [{ text: 'Opening settings panel.', tone: 'info' }],
+    lines: [{ text: t('command.opening_settings'), tone: 'info' }],
     openSettings: true,
   }),
   clear: (): CommandResult => ({ lines: [], clearOutput: true }),
@@ -74,7 +77,7 @@ export async function executeCommand(raw: string, ctx: CommandContext): Promise<
   if (parsed.name === 'open') return openResult(parsed.arg, ctx.services, ctx.settings);
   if (parsed.name === 'scan') return scanResult();
   if (parsed.name === 'wildcard') return wildcardResult(parsed.arg, ctx.settings);
-  return { lines: [{ text: "Unknown command. Try 'help'.", tone: 'error' }] };
+  return { lines: [{ text: t('command.unknown_command'), tone: 'error' }] };
 }
 
 function parseCommand(raw: string): ParsedCommand | null {
@@ -86,22 +89,22 @@ function parseCommand(raw: string): ParsedCommand | null {
 
 function helpResult(arg: string): CommandResult {
   const entries: { cmd: string; desc: string }[] = [
-    { cmd: 'help', desc: 'help | help <command> for details' },
-    { cmd: 'list', desc: 'list services with index' },
-    { cmd: 'status', desc: 'show DNS/Proxy status and counts' },
-    { cmd: 'expose', desc: 'expose <service> by name, subdomain, or index' },
-    { cmd: 'unexpose', desc: 'unexpose <service> by name, subdomain, or index' },
-    { cmd: 'test', desc: 'test dns | test proxy' },
-    { cmd: 'open', desc: 'open <service> to launch exposed URL' },
-    { cmd: 'config', desc: 'toggle settings panel' },
-    { cmd: 'clear', desc: 'clear terminal output' },
-    { cmd: 'iamfeelinglucky', desc: 'random tip or quip' },
-    { cmd: 'scan', desc: 'scan for services' },
-    { cmd: 'wildcard', desc: 'wildcard status | enable <domain> | disable' },
+    { cmd: 'help', desc: t('command.help_help') },
+    { cmd: 'list', desc: t('command.help_list') },
+    { cmd: 'status', desc: t('command.help_status') },
+    { cmd: 'expose', desc: t('command.help_expose') },
+    { cmd: 'unexpose', desc: t('command.help_unexpose') },
+    { cmd: 'test', desc: t('command.help_test') },
+    { cmd: 'open', desc: t('command.help_open') },
+    { cmd: 'config', desc: t('command.help_config') },
+    { cmd: 'clear', desc: t('command.help_clear') },
+    { cmd: 'iamfeelinglucky', desc: t('command.help_lucky') },
+    { cmd: 'scan', desc: t('command.help_scan') },
+    { cmd: 'wildcard', desc: t('command.help_wildcard') },
   ];
   const key = arg.trim().toLowerCase();
   if (!key) {
-    const lines: OutputLine[] = [{ text: 'Commands:', tone: 'info' }];
+    const lines: OutputLine[] = [{ text: t('command.commands_label'), tone: 'info' }];
     return {
       lines: [
         ...lines,
@@ -113,13 +116,13 @@ function helpResult(arg: string): CommandResult {
     };
   }
   const match = entries.find(e => e.cmd === key);
-  if (!match) return { lines: [{ text: 'Unknown command. Try help.', tone: 'error' }] };
+  if (!match) return { lines: [{ text: t('command.unknown_help'), tone: 'error' }] };
   return { lines: [{ text: match.desc, tone: 'info' }] };
 }
 
 function listLines(services: ServiceRecord[]): OutputLine[] {
   if (services.length === 0) {
-    return [{ text: 'No services found. Run a scan to discover containers.', tone: 'muted' }];
+    return [{ text: t('command.no_services_found'), tone: 'muted' }];
   }
   return services.map((svc, idx) => {
     const status = svc.enabled ? 'exposed' : 'hidden';
@@ -151,16 +154,16 @@ function statusLine(services: ServiceRecord[], settings: SettingsStatus | undefi
 function exposeResult(name: string, arg: string, services: ServiceRecord[]): CommandResult {
   const svc = resolveService(arg, services);
   if (!svc)
-    return { lines: [{ text: 'Service not found. Use list to view services.', tone: 'error' }] };
+    return { lines: [{ text: t('command.service_not_found'), tone: 'error' }] };
   if (name === 'expose' && svc.enabled) {
-    return { lines: [{ text: `${svc.name} is already exposed.`, tone: 'muted' }] };
+    return { lines: [{ text: t('command.already_exposed', { name: svc.name }), tone: 'muted' }] };
   }
   if (name === 'unexpose' && !svc.enabled) {
-    return { lines: [{ text: `${svc.name} is not exposed.`, tone: 'muted' }] };
+    return { lines: [{ text: t('command.not_exposed', { name: svc.name }), tone: 'muted' }] };
   }
-  const actionText = name === 'expose' ? 'Exposing' : 'Unexposing';
+  const actionKey = name === 'expose' ? 'command.exposing' : 'command.unexposing';
   const lines: OutputLine[] = [
-    { text: `${actionText} ${svc.name} (${svc.subdomain})`, tone: 'info' },
+    { text: t(actionKey, { name: svc.name, subdomain: svc.subdomain }), tone: 'info' },
   ];
   return name === 'expose'
     ? { lines, exposeServiceId: svc.id }
@@ -169,18 +172,18 @@ function exposeResult(name: string, arg: string, services: ServiceRecord[]): Com
 
 async function testResult(arg: string): Promise<CommandResult> {
   if (arg !== 'dns' && arg !== 'proxy') {
-    return { lines: [{ text: 'usage: test dns | test proxy', tone: 'error' }] };
+    return { lines: [{ text: t('command.test_usage'), tone: 'error' }] };
   }
   try {
     const fn = arg === 'dns' ? api.settings.testDns : api.settings.testProxy;
     const res = await fn();
-    if (res.ok) return { lines: [{ text: `test ${arg} passed`, tone: 'success' }] };
+    if (res.ok) return { lines: [{ text: t('command.test_passed', { target: arg }), tone: 'success' }] };
     return {
-      lines: [{ text: `test ${arg} failed: ${res.error || 'unknown error'}`, tone: 'error' }],
+      lines: [{ text: t('command.test_failed', { target: arg, error: res.error || 'unknown error' }), tone: 'error' }],
     };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Request failed';
-    return { lines: [{ text: `test ${arg} failed: ${msg}`, tone: 'error' }] };
+    const msg = err instanceof Error ? err.message : t('command.request_failed');
+    return { lines: [{ text: t('command.test_failed', { target: arg, error: msg }), tone: 'error' }] };
   }
 }
 
@@ -190,19 +193,19 @@ function openResult(
   settings: SettingsStatus | undefined
 ): CommandResult {
   const svc = resolveService(arg, services);
-  if (!svc) return { lines: [{ text: 'Service not found. Use list to pick one.', tone: 'error' }] };
+  if (!svc) return { lines: [{ text: t('command.service_not_found'), tone: 'error' }] };
   if (!svc.enabled)
-    return { lines: [{ text: 'Service is not exposed. Expose it first.', tone: 'error' }] };
+    return { lines: [{ text: t('command.service_not_exposed'), tone: 'error' }] };
   const url = buildUrl(svc, settings);
-  if (!url) return { lines: [{ text: 'No domain found for this service.', tone: 'error' }] };
-  return { lines: [{ text: `Open: ${url}`, tone: 'info' }], openUrl: url };
+  if (!url) return { lines: [{ text: t('command.no_domain_found'), tone: 'error' }] };
+  return { lines: [{ text: t('command.open_url', { url }), tone: 'info' }], openUrl: url };
 }
 
 function scanResult(): CommandResult {
   return {
     lines: [
-      { text: 'Scanning for services...', tone: 'info' },
-      { text: 'Scan started. Check status for counts.', tone: 'muted' },
+      { text: t('command.scanning'), tone: 'info' },
+      { text: t('command.scan_started'), tone: 'muted' },
     ],
     scan: true,
   };
@@ -225,33 +228,33 @@ function wildcardStatusResult(settings: SettingsStatus | undefined): CommandResu
   const hasCert = settings?.wildcard?.certId !== null && settings?.wildcard?.certId !== undefined;
 
   if (!enabled) {
-    return { lines: [{ text: 'Wildcard mode: disabled', tone: 'muted' }] };
+    return { lines: [{ text: t('command.wildcard_disabled'), tone: 'muted' }] };
   }
 
-  const certStatus = hasCert ? 'linked' : 'not detected';
+  const certStatus = hasCert ? t('command.wildcard_cert_linked') : t('command.wildcard_cert_not_detected');
   return {
     lines: [
-      { text: `Wildcard mode: enabled`, tone: 'success' },
-      { text: `Domain: *.${domain}`, tone: 'info' },
-      { text: `Certificate: ${certStatus}`, tone: hasCert ? 'info' : 'muted' },
+      { text: t('command.wildcard_enabled'), tone: 'success' },
+      { text: t('command.wildcard_domain', { domain }), tone: 'info' },
+      { text: certStatus, tone: hasCert ? 'info' : 'muted' },
     ],
   };
 }
 
 async function wildcardEnableResult(domain: string | undefined): Promise<CommandResult> {
   if (!domain) {
-    return { lines: [{ text: 'Usage: wildcard enable <domain>', tone: 'error' }] };
+    return { lines: [{ text: t('command.wildcard_enable_usage'), tone: 'error' }] };
   }
   try {
     await api.settings.saveWildcard(true, domain);
     return {
       lines: [
-        { text: `Wildcard mode enabled for *.${domain}`, tone: 'success' },
-        { text: 'DNS creation will be skipped for new exposures.', tone: 'muted' },
+        { text: t('command.wildcard_enabled_for', { domain }), tone: 'success' },
+        { text: t('command.dns_skipped_new'), tone: 'muted' },
       ],
     };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Failed to enable wildcard mode';
+    const msg = err instanceof Error ? err.message : t('command.failed_enable_wildcard');
     return { lines: [{ text: msg, tone: 'error' }] };
   }
 }
@@ -261,11 +264,11 @@ async function wildcardDisableResult(): Promise<CommandResult> {
     await api.settings.saveWildcard(false, '');
     return {
       lines: [
-        { text: 'Wildcard mode disabled. DNS will be created per service.', tone: 'success' },
+        { text: t('command.wildcard_disabled_dns_per_service'), tone: 'success' },
       ],
     };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Failed to disable wildcard mode';
+    const msg = err instanceof Error ? err.message : t('command.failed_disable_wildcard');
     return { lines: [{ text: msg, tone: 'error' }] };
   }
 }
@@ -281,5 +284,5 @@ async function wildcardResult(
   if (subcommand === 'enable') return wildcardEnableResult(parts[1]);
   if (subcommand === 'disable') return wildcardDisableResult();
 
-  return { lines: [{ text: 'Usage: wildcard status | enable <domain> | disable', tone: 'error' }] };
+  return { lines: [{ text: t('command.wildcard_usage'), tone: 'error' }] };
 }

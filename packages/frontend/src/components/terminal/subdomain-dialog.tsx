@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type ServiceRecord } from '../../lib/api';
+import { useI18n } from '../../hooks/use-i18n';
 
 interface SubdomainDialogProps {
   service: ServiceRecord;
@@ -11,6 +12,7 @@ interface SubdomainDialogProps {
 const FONT_STACK = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
 
 export function SubdomainDialog({ service, onClose }: SubdomainDialogProps): JSX.Element {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [selectedSubdomain, setSelectedSubdomain] = useState<string>(service.subdomain);
 
@@ -35,27 +37,24 @@ export function SubdomainDialog({ service, onClose }: SubdomainDialogProps): JSX
         style={{ fontFamily: FONT_STACK }}
         onClick={e => e.stopPropagation()}
       >
-        <h3 className="text-lg font-bold mb-2 text-[#c9d1d9]">Resolve Subdomain Conflict</h3>
+        <h3 className="text-lg font-bold mb-2 text-[#c9d1d9]">{t('subdomain_dialog.resolve_conflict_title')}</h3>
         <p className="text-sm text-[#8b949e] mb-6">
-          Choose which subdomain to use. New DNS and proxy resources will be created with the
-          selected subdomain, then old resources will be deleted.
+          {t('subdomain_dialog.resolve_conflict_desc')}
         </p>
         <div className="space-y-3 mb-6">
           <SubdomainOption
             value={service.subdomain}
-            label="From container label/database"
+            label={t('service_status.from_container_label')}
             selected={selectedSubdomain === service.subdomain}
             onChange={setSelectedSubdomain}
           />
           <SubdomainOption
             value={service.exposedSubdomain!}
-            label="From NPM proxy record"
+            label={t('service_status.from_npm_proxy')}
             selected={selectedSubdomain === service.exposedSubdomain}
             onChange={setSelectedSubdomain}
             helperText={
-              isKeepingExposed
-                ? 'The container label will remain but be ignored. Update your Docker config to remove it.'
-                : undefined
+              isKeepingExposed ? t('subdomain_dialog.the_container_label_will_remain') : undefined
             }
           />
         </div>
@@ -65,7 +64,7 @@ export function SubdomainDialog({ service, onClose }: SubdomainDialogProps): JSX
             disabled={migrateMutation.isPending}
             className="rounded border border-[#30363d] px-3 py-1.5 text-xs text-[#c9d1d9] transition-colors hover:bg-[#30363d] disabled:opacity-50"
           >
-            Cancel
+            {t('settings.cancel')}
           </button>
           <button
             onClick={() =>
@@ -74,7 +73,7 @@ export function SubdomainDialog({ service, onClose }: SubdomainDialogProps): JSX
             disabled={migrateMutation.isPending}
             className="rounded px-3 py-1.5 text-xs font-medium text-white bg-[#238636] hover:bg-[#2ea043] transition-colors disabled:opacity-50"
           >
-            {migrateMutation.isPending ? 'Applying...' : 'Apply'}
+            {migrateMutation.isPending ? t('subdomain_dialog.applying') : t('subdomain_dialog.apply')}
           </button>
         </div>
       </div>

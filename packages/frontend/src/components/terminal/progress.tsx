@@ -2,6 +2,7 @@ import React from 'react';
 import type { ProgressEvent, ProgressStep } from '../../lib/progress.types';
 import { ResultDisplay } from './result-display';
 import { TERMINAL_COLORS } from './theme';
+import { useI18n } from '../../hooks/use-i18n';
 
 const PROGRESS_CHARS = {
   filled: '#',
@@ -19,8 +20,6 @@ const STATUS_ICONS = {
 
 const PROGRESS_WIDTH = 20;
 const SPINNER_INTERVAL_MS = 150;
-const PROPAGATION_TEXT =
-  'DNS propagation can take up to 2 minutes. Local checks finish first; global checks may keep running.';
 
 type StepLogEntry = {
   id: string;
@@ -119,8 +118,9 @@ export function ProgressOutput({
   isRetrying,
   retryResult,
 }: ProgressOutputProps): JSX.Element | null {
+  const { t } = useI18n();
   const logs = useStepLogs(action ? steps : [], startedAt, lastEventAt);
-  const propagationHint = action ? getPropagationHint(steps) : null;
+  const propagationHint = action ? getPropagationHint(steps, t) : null;
   if (!action) return null;
 
   return (
@@ -129,7 +129,7 @@ export function ProgressOutput({
       <div className="space-y-3 pl-4">
         <StepList steps={steps} />
         {propagationHint && <HintBox text={propagationHint} />}
-        <LiveLog entries={logs} startedAt={startedAt} />
+        <LiveLog entries={logs} startedAt={startedAt} t={t} />
       </div>
       {result && (
         <ResultDisplay
@@ -195,9 +195,11 @@ export function InlineSpinner(): JSX.Element {
 function LiveLog({
   entries,
   startedAt,
+  t,
 }: {
   entries: StepLogEntry[];
   startedAt: number | null;
+  t: any;
 }): JSX.Element | null {
   if (!startedAt) return null;
 
@@ -207,7 +209,7 @@ function LiveLog({
   }));
 
   if (formattedEntries.length === 0) {
-    return <div className="text-xs text-[#8b949e]">{'->'} waiting for updates</div>;
+    return <div className="text-xs text-[#8b949e]">{'->'} {t('progress.waiting_for_updates')}</div>;
   }
 
   return (
@@ -257,14 +259,14 @@ function useStepLogs(
   return entries;
 }
 
-function getPropagationHint(steps: ProgressStep[]): string | null {
+function getPropagationHint(steps: ProgressStep[], t: any): string | null {
   const dnsStep = steps.find(step => step.phase === 'dns');
   if (!dnsStep) return null;
   if (dnsStep.status !== 'running') return null;
   const detail = dnsStep.detail?.toLowerCase() ?? '';
   const isPropagation =
     detail.includes('local') || detail.includes('global') || detail.includes('propagation');
-  return isPropagation ? PROPAGATION_TEXT : null;
+  return isPropagation ? t('progress.dns_propagation_hint') : null;
 }
 
 function getBucket(phase: ProgressStep['phase'], text: string): string | null {

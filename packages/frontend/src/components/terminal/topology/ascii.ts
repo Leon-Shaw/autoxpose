@@ -1,4 +1,7 @@
 import { getProviderDisplayName } from '../provider-icons';
+import i18n from '../../../i18n';
+
+const t = i18n.t.bind(i18n);
 
 interface ServiceItem {
   id: string;
@@ -146,7 +149,7 @@ function generateServicesASCII(services: ServiceItem[]): string {
   const boxWidth = 38;
 
   if (services.length === 0) {
-    return buildServiceBox('No Services Exposed', boxWidth) + '                          \u2502\n';
+    return buildServiceBox(t('topology.no_services_exposed'), boxWidth) + '                          \u2502\n';
   }
 
   if (services.length === 1) {
@@ -198,8 +201,8 @@ function generateServicesASCII(services: ServiceItem[]): string {
 export function generateTopologyASCII(options: ASCIIOptions): string {
   const { services, dnsProvider, proxyProvider, dnsConfigured, proxyConfigured, platformName } =
     options;
-  const dnsName = dnsProvider ? getProviderDisplayName(dnsProvider) : 'DNS Not Set';
-  const proxyName = proxyProvider ? getProviderDisplayName(proxyProvider) : 'Proxy Not Set';
+  const dnsName = dnsProvider ? getProviderDisplayName(dnsProvider) : t('topology.not_configured');
+  const proxyName = proxyProvider ? getProviderDisplayName(proxyProvider) : t('topology.not_configured');
   const check = '\u2713';
   const cross = '\u2717';
 
@@ -221,7 +224,7 @@ export function generateTopologyASCII(options: ASCIIOptions): string {
   let header = topBorder + title + bottomBorder;
   header += '                          \u2502\n';
 
-  const dockerLabel = platformName ? `Docker (on ${platformName})` : 'Docker';
+  const dockerLabel = platformName ? `${t('topology.docker')} (${t('topology.on_platform', { platform: platformName })})` : t('topology.docker');
   let diagram = buildFlowBox(dockerLabel, boxWidth);
   diagram += '                          \u2502\n';
 

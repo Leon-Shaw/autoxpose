@@ -2,25 +2,27 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { api, type ProviderStatus } from '../../lib/api';
 import { ProviderForm } from './provider-form';
+import { useI18n } from '../../hooks/use-i18n';
 
 const DNS_PROVIDERS = ['cloudflare', 'netlify'];
 type Props = { current: ProviderStatus | null };
 
 function ConfigDisplay({ current }: Props): JSX.Element | null {
+  const { t } = useI18n();
   if (!current?.configured) return null;
   return (
     <div className="mt-3 text-xs text-neutral-500 space-y-1">
       <p>
-        <span className="text-neutral-400">Provider:</span> {current.provider}
+        <span className="text-neutral-400">{t('settings.provider')}:</span> {current.provider}
       </p>
       {current.config?.zoneId && (
         <p>
-          <span className="text-neutral-400">Zone ID:</span> {current.config.zoneId}
+          <span className="text-neutral-400">{t('settings.zone_id')}:</span> {current.config.zoneId}
         </p>
       )}
       {current.config?.token && (
         <p>
-          <span className="text-neutral-400">Token:</span> {current.config.token}
+          <span className="text-neutral-400">{t('settings.token')}:</span> {current.config.token}
         </p>
       )}
     </div>
@@ -28,6 +30,7 @@ function ConfigDisplay({ current }: Props): JSX.Element | null {
 }
 
 export function DnsConfigCard({ current }: Props): JSX.Element {
+  const { t } = useI18n();
   const [provider, setProvider] = useState(current?.provider || 'cloudflare');
   const [token, setToken] = useState('');
   const [zoneId, setZoneId] = useState('');
@@ -48,8 +51,8 @@ export function DnsConfigCard({ current }: Props): JSX.Element {
 
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-5">
-      <h3 className="font-medium">DNS Provider</h3>
-      <p className="mt-1 text-sm text-neutral-500">Configure DNS for automatic record creation</p>
+      <h3 className="font-medium">{t('settings.dns')}</h3>
+      <p className="mt-1 text-sm text-neutral-500">{t('settings.configure_proxy_first')}</p>
       <ProviderForm
         providers={DNS_PROVIDERS}
         provider={provider}
@@ -58,18 +61,18 @@ export function DnsConfigCard({ current }: Props): JSX.Element {
         isPending={mutation.isPending}
         isSuccess={mutation.isSuccess}
         isError={mutation.isError}
-        buttonText="Save DNS"
+        buttonText={t('settings.save_dns')}
       >
         <input
           type="password"
-          placeholder={current?.config?.token ? 'API Token (saved)' : 'API Token'}
+          placeholder={current?.config?.token ? `${t('settings.api_key')} (${t('settings.saved')})` : t('settings.api_key')}
           value={token}
           onChange={e => setToken(e.target.value)}
           className="w-full rounded border border-neutral-300 p-2 text-sm"
         />
         <input
           type="text"
-          placeholder="Zone ID"
+          placeholder={t('settings.zone_id')}
           value={zoneId}
           onChange={e => setZoneId(e.target.value)}
           className="w-full rounded border border-neutral-300 p-2 text-sm"

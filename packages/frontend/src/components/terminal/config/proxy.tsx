@@ -5,6 +5,7 @@ import { FormActions, FormInput, FormSelect } from '../form-components';
 import { PROXY_PROVIDERS, ProxyDisplay } from './proxy-display';
 import { TERMINAL_COLORS } from '../theme';
 import { Tooltip } from '../tooltip';
+import { useI18n } from '../../../hooks/use-i18n';
 
 interface ProxyConfigSectionProps {
   current: SettingsStatus['proxy'] | null;
@@ -37,23 +38,24 @@ interface ProxyHeaderProps {
 }
 
 function ProxyHeader({ isConfigured, isEditing, onEdit }: ProxyHeaderProps): JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="mb-3 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-[#c9d1d9]">Proxy Provider</span>
+        <span className="text-sm font-medium text-[#c9d1d9]">{t('settings.proxy_provider')}</span>
         {isConfigured && (
           <span
             className="rounded px-1.5 py-0.5 text-[10px]"
             style={{ background: `${TERMINAL_COLORS.success}20`, color: TERMINAL_COLORS.success }}
           >
-            configured
+            {t('settings.configured')}
           </span>
         )}
       </div>
       {isConfigured && !isEditing && (
-        <Tooltip content="Edit proxy settings">
+        <Tooltip content={t('service_status.edit_proxy_settings')}>
           <button onClick={onEdit} className="text-xs text-[#58a6ff] hover:underline">
-            Edit
+            {t('settings.edit')}
           </button>
         </Tooltip>
       )}
@@ -131,19 +133,20 @@ function useProxyForm(current: SettingsStatus['proxy'] | null, onDone: () => voi
 }
 
 function ProxyEditForm({ current, onDone }: ProxyEditFormProps): JSX.Element {
+  const { t } = useI18n();
   const form = useProxyForm(current, onDone);
-  const pwPlaceholder = form.hasPassword ? 'Saved' : 'Enter password';
+  const pwPlaceholder = form.hasPassword ? t('settings.saved') : t('settings.enter_password');
 
   return (
     <div className="space-y-3">
       <FormSelect
-        label="Provider"
+        label={t('settings.provider')}
         value={form.provider}
         onChange={form.setProvider}
         options={PROXY_PROVIDERS}
       />
       <FormInput
-        label={form.isNpm ? 'NPM URL' : 'Caddy Admin API'}
+        label={form.isNpm ? t('proxy.npm_url') : t('proxy.caddy_admin_api')}
         placeholder={form.isNpm ? 'http://192.168.1.100:81' : 'http://localhost:2019'}
         value={form.url}
         onChange={form.setUrl}
@@ -151,13 +154,13 @@ function ProxyEditForm({ current, onDone }: ProxyEditFormProps): JSX.Element {
       {form.isNpm && (
         <>
           <FormInput
-            label="Username"
+            label={t('settings.username')}
             placeholder="admin@example.com"
             value={form.username}
             onChange={form.setUsername}
           />
           <FormInput
-            label="Password"
+            label={t('settings.password')}
             type="password"
             placeholder={pwPlaceholder}
             value={form.password}
@@ -172,7 +175,7 @@ function ProxyEditForm({ current, onDone }: ProxyEditFormProps): JSX.Element {
         onSave={form.mutate}
         onCancel={onDone}
       />
-      {form.isError && <p className="text-xs text-[#f85149]">Failed to save settings</p>}
+      {form.isError && <p className="text-xs text-[#f85149]">{t('settings.failed_to_save')}</p>}
     </div>
   );
 }

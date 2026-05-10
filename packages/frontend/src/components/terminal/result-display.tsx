@@ -1,11 +1,13 @@
 import type { ProgressEvent } from '../../lib/progress.types';
 import { TERMINAL_COLORS } from './theme';
+import { useI18n } from '../../hooks/use-i18n';
 
 function parseSSLError(raw?: string): string {
-  if (!raw) return 'SSL certificate could not be issued';
-  if (raw.includes('No such authorization')) return 'DNS not yet visible to certificate authority';
-  if (raw.includes('Internal Error')) return 'Certificate authority unreachable - try again';
-  return 'SSL certificate request failed';
+  const { t } = useI18n();
+  if (!raw) return t('result.ssl_cert_not_issued');
+  if (raw.includes('No such authorization')) return t('result.dns_not_visible');
+  if (raw.includes('Internal Error')) return t('result.ca_unreachable');
+  return t('result.ssl_request_failed');
 }
 
 interface ResultDisplayProps {
@@ -18,13 +20,14 @@ interface ResultDisplayProps {
 }
 
 function SslPendingResult(props: ResultDisplayProps): JSX.Element {
+  const { t } = useI18n();
   const { result, onRetrySsl, isRetrying, retryResult } = props;
   if (retryResult?.success) {
     const url = `https://${result.domain}`;
     return (
       <div className="mt-4 pl-4 font-mono text-sm" style={{ color: TERMINAL_COLORS.success }}>
         <span className="mr-2">{'\u2713'}</span>
-        SSL issued -{' '}
+        {t('result.ssl_issued')} -{' '}
         <a href={url} target="_blank" rel="noopener noreferrer" className="underline">
           {url}
         </a>
@@ -35,7 +38,7 @@ function SslPendingResult(props: ResultDisplayProps): JSX.Element {
   return (
     <div className="mt-4 pl-4 font-mono text-sm">
       <div style={{ color: TERMINAL_COLORS.warning }}>
-        <span className="mr-2">{'\u26A0'}</span>Exposed at http://{result.domain} (SSL pending)
+        <span className="mr-2">{'\u26A0'}</span>{t('result.exposed_http', { domain: result.domain })}
       </div>
       <div className="mt-2 text-xs" style={{ color: TERMINAL_COLORS.textMuted }}>
         {errorMsg}
@@ -47,7 +50,7 @@ function SslPendingResult(props: ResultDisplayProps): JSX.Element {
           className="mt-2 rounded border border-[#30363d] px-2 py-1 text-xs hover:border-[#58a6ff] disabled:opacity-50"
           style={{ color: TERMINAL_COLORS.accent }}
         >
-          {isRetrying ? 'Retrying...' : 'Retry SSL'}
+          {isRetrying ? t('result.retrying') : t('result.retry_ssl')}
         </button>
       )}
     </div>
@@ -55,6 +58,7 @@ function SslPendingResult(props: ResultDisplayProps): JSX.Element {
 }
 
 export function ResultDisplay(props: ResultDisplayProps): JSX.Element {
+  const { t } = useI18n();
   const { result, action } = props;
   if (result.success && result.sslPending) return <SslPendingResult {...props} />;
   if (result.success) {
@@ -62,15 +66,15 @@ export function ResultDisplay(props: ResultDisplayProps): JSX.Element {
     const msg =
       action === 'expose' && url ? (
         <>
-          Exposed at{' '}
+          {t('result.exposed_at')}{' '}
           <a href={url} target="_blank" rel="noopener noreferrer" className="underline">
             {url}
           </a>
         </>
       ) : action === 'expose' ? (
-        'Service exposed'
+        t('result.service_exposed')
       ) : (
-        'Service unexposed'
+        t('result.service_unexposed')
       );
     return (
       <div className="mt-4 pl-4 font-mono text-sm" style={{ color: TERMINAL_COLORS.success }}>
@@ -82,7 +86,7 @@ export function ResultDisplay(props: ResultDisplayProps): JSX.Element {
   return (
     <div className="mt-4 pl-4 font-mono text-sm" style={{ color: TERMINAL_COLORS.error }}>
       <span className="mr-2">{'\u2717'}</span>
-      {result.error || 'Operation failed'}
+      {result.error || t('result.operation_failed')}
     </div>
   );
 }

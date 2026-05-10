@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ConfirmDialog } from '../../components/terminal';
 import { type ServiceRecord } from '../../lib/api';
+import { useI18n } from '../../hooks/use-i18n';
 
 export type ConfirmAction =
   | { type: 'expose-all' }
@@ -25,6 +26,7 @@ export function ConfirmDialogs({
   onCancel,
   onUnexposeChange,
 }: ConfirmDialogsProps): JSX.Element {
+  const { t } = useI18n();
   const unexposedCount = serviceCount - exposedCount;
   const deleteName = action?.type === 'delete' ? action.service.name : '';
   const hasResources =
@@ -39,37 +41,37 @@ export function ConfirmDialogs({
   };
 
   const deleteMessage = hasResources
-    ? `"${deleteName}" is currently exposed. Uncheck to keep it accessible.`
-    : `Remove "${deleteName}" from tracking?`;
+    ? t('confirm.remove_exposed_message', { name: deleteName })
+    : t('confirm.remove_unexposed_message', { name: deleteName });
 
   return (
     <>
       <ConfirmDialog
         isOpen={action?.type === 'expose-all'}
-        title="Expose All Services"
-        message={`This will expose ${unexposedCount} service(s) to the internet. Continue?`}
-        confirmText="Expose All"
+        title={t('confirm.expose_all_title')}
+        message={t('confirm.expose_all_message', { count: unexposedCount })}
+        confirmText={t('confirm.expose_all_button')}
         variant="default"
         onConfirm={onConfirm}
         onCancel={onCancel}
       />
       <ConfirmDialog
         isOpen={action?.type === 'unexpose-all'}
-        title="Unexpose All Services"
-        message={`This will unexpose ${exposedCount} service(s) from the internet. Continue?`}
-        confirmText="Unexpose All"
+        title={t('confirm.unexpose_all_title')}
+        message={t('confirm.unexpose_all_message', { count: exposedCount })}
+        confirmText={t('confirm.unexpose_all_button')}
         variant="warning"
         onConfirm={onConfirm}
         onCancel={onCancel}
       />
       <ConfirmDialog
         isOpen={action?.type === 'delete'}
-        title="Remove Service"
+        title={t('confirm.remove_service_title')}
         message={deleteMessage}
-        confirmText="Remove"
+        confirmText={t('confirm.remove_button')}
         variant="danger"
         showCheckbox={hasResources}
-        checkboxLabel="Also remove DNS record and proxy host"
+        checkboxLabel={t('confirm.also_remove_dns_proxy')}
         checkboxChecked={unexposeChecked}
         onCheckboxChange={handleUnexposeChange}
         onConfirm={onConfirm}

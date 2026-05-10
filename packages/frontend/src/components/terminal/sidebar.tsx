@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { type ServiceRecord } from '../../lib/api';
 import { TERMINAL_COLORS } from './theme';
 import { Tooltip } from './tooltip';
+import { useI18n } from '../../hooks/use-i18n';
 
 interface TerminalSidebarProps {
   services: ServiceRecord[];
@@ -29,9 +30,7 @@ export function TerminalSidebar({
   return (
     <div className="flex w-56 flex-col border-r border-[#30363d] bg-[#0d1117]">
       <div className="flex-1 overflow-auto p-4">
-        <div className="mb-3 text-xs font-bold uppercase tracking-wider text-[#8b949e]">
-          Services
-        </div>
+        <SidebarServicesHeader />
         <div className="space-y-0.5">
           {services.map(s => (
             <SidebarItem
@@ -46,18 +45,40 @@ export function TerminalSidebar({
       </div>
       <div className="border-t border-[#30363d] p-4">
         <div className="flex justify-center">
-          <Tooltip content="Keyboard shortcuts">
-            <button
-              onClick={handleHelpClick}
-              className={`flex h-6 w-6 items-center justify-center rounded-full border border-[#30363d] text-xs text-[#8b949e] transition-all hover:border-[#58a6ff] hover:text-[#58a6ff] ${!hasSeenHelp ? 'animate-pulse' : ''}`}
-              aria-label="Show keyboard shortcuts"
-            >
-              ?
-            </button>
-          </Tooltip>
+          <SidebarHelpButton hasSeenHelp={hasSeenHelp} onClick={handleHelpClick} />
         </div>
       </div>
     </div>
+  );
+}
+
+function SidebarServicesHeader(): JSX.Element {
+  const { t } = useI18n();
+  return (
+    <div className="mb-3 text-xs font-bold uppercase tracking-wider text-[#8b949e]">
+      {t('sidebar.services')}
+    </div>
+  );
+}
+
+function SidebarHelpButton({
+  hasSeenHelp,
+  onClick,
+}: {
+  hasSeenHelp: boolean;
+  onClick: () => void;
+}): JSX.Element {
+  const { t } = useI18n();
+  return (
+    <Tooltip content={t('tooltip.keyboard_shortcuts')}>
+      <button
+        onClick={onClick}
+        className={`flex h-6 w-6 items-center justify-center rounded-full border border-[#30363d] text-xs text-[#8b949e] transition-all hover:border-[#58a6ff] hover:text-[#58a6ff] ${!hasSeenHelp ? 'animate-pulse' : ''}`}
+        aria-label={t('sidebar.show_keyboard_shortcuts')}
+      >
+        ?
+      </button>
+    </Tooltip>
   );
 }
 
@@ -68,7 +89,8 @@ interface SidebarItemProps {
 }
 
 function SidebarItem({ service, isActive, onClick }: SidebarItemProps): JSX.Element {
-  const tipText = service.enabled ? 'Online - Click to view' : 'Offline';
+  const { t } = useI18n();
+  const tipText = service.enabled ? t('tooltip.online_click_to_view') : t('tooltip.offline');
   const activeCss = isActive
     ? 'bg-[#161b22] text-white'
     : 'text-[#c9d1d9] opacity-70 hover:bg-[#161b22] hover:opacity-100';
@@ -88,11 +110,12 @@ function SidebarItem({ service, isActive, onClick }: SidebarItemProps): JSX.Elem
 }
 
 function EmptyState(): JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="px-2 py-4 text-center text-xs text-[#8b949e]">
-      No services yet.
+      {t('sidebar.no_services_yet')}
       <br />
-      Click the yellow button to scan.
+      {t('sidebar.click_yellow_to_scan')}
     </div>
   );
 }

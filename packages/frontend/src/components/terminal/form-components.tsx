@@ -1,4 +1,5 @@
 import { InlineSpinner } from './progress';
+import { useI18n } from '../../hooks/use-i18n';
 
 interface FormSelectProps {
   label: string;
@@ -61,6 +62,7 @@ interface FormActionsProps {
 }
 
 export function FormActions(props: FormActionsProps): JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="flex gap-2">
       <button
@@ -69,14 +71,14 @@ export function FormActions(props: FormActionsProps): JSX.Element {
         className="flex items-center gap-2 rounded bg-[#238636] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#2ea043] disabled:opacity-50"
       >
         {props.isPending && <InlineSpinner />}
-        Save
+        {t('settings.save')}
       </button>
       {props.showCancel && (
         <button
           onClick={props.onCancel}
           className="rounded border border-[#30363d] px-3 py-1.5 text-xs text-[#c9d1d9] transition-colors hover:bg-[#30363d]"
         >
-          Cancel
+          {t('settings.cancel')}
         </button>
       )}
     </div>

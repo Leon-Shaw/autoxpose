@@ -1,4 +1,5 @@
 import type { ProviderStatus } from '../lib/api';
+import { useI18n } from '../hooks/use-i18n';
 
 export function Spinner(): JSX.Element {
   return (
@@ -20,18 +21,19 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ isLoading, isExposing, isExposed }: StatusBadgeProps): JSX.Element {
+  const { t } = useI18n();
   if (isLoading) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
         <Spinner />
-        {isExposing ? 'Exposing...' : 'Removing...'}
+        {isExposing ? t('common.creating') : t('common.resetting')}
       </span>
     );
   }
   const cls = isExposed ? 'bg-emerald-100 text-emerald-700' : 'bg-neutral-100 text-neutral-600';
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {isExposed ? 'Exposed' : 'Not Exposed'}
+      {isExposed ? t('common.exposed') : t('service_status.not_exposed')}
     </span>
   );
 }
@@ -41,25 +43,26 @@ interface ConfigDisplayProps {
 }
 
 export function ConfigDisplay({ current }: ConfigDisplayProps): JSX.Element | null {
+  const { t } = useI18n();
   if (!current?.configured) return null;
   return (
     <div className="mt-3 text-xs text-neutral-500 space-y-1">
       <p>
-        <span className="text-neutral-400">Provider:</span> {current.provider}
+        <span className="text-neutral-400">{t('settings.provider')}:</span> {current.provider}
       </p>
       {current.config?.url && (
         <p>
-          <span className="text-neutral-400">URL:</span> {current.config.url}
+          <span className="text-neutral-400">{t('settings.url')}:</span> {current.config.url}
         </p>
       )}
       {current.config?.username && (
         <p>
-          <span className="text-neutral-400">Username:</span> {current.config.username}
+          <span className="text-neutral-400">{t('settings.username')}:</span> {current.config.username}
         </p>
       )}
       {current.config?.password && (
         <p>
-          <span className="text-neutral-400">Password:</span> {current.config.password}
+          <span className="text-neutral-400">{t('settings.password')}:</span> {current.config.password}
         </p>
       )}
     </div>

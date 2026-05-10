@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
 import { Tooltip } from '../tooltip';
+import { useI18n } from '../../../hooks/use-i18n';
 
 interface EditableSubdomainProps {
   value: string;
@@ -10,6 +11,7 @@ interface EditableSubdomainProps {
 }
 
 function EmptyState({ onEdit }: { onEdit: () => void }): JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="mb-3">
       <button
@@ -18,7 +20,7 @@ function EmptyState({ onEdit }: { onEdit: () => void }): JSX.Element {
         className="flex cursor-pointer items-center gap-1 text-xs text-[#f0883e] hover:underline"
       >
         <span className="animate-pulse">{'\u25B6'}</span>
-        <span>set subdomain to expose</span>
+        <span>{t('proxy.set_subdomain_to_expose')}</span>
       </button>
     </div>
   );
@@ -34,6 +36,7 @@ interface EditInputProps {
 }
 
 function EditInput(p: EditInputProps): JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="mb-3 flex items-center gap-1 text-xs">
       <input
@@ -44,7 +47,7 @@ function EditInput(p: EditInputProps): JSX.Element {
         onBlur={p.onSave}
         onKeyDown={p.onKeyDown}
         className="w-24 border-b border-[#58a6ff] bg-transparent text-[#58a6ff] outline-none"
-        placeholder="subdomain"
+        placeholder={t('proxy.subdomain_placeholder')}
       />
       {p.baseDomain && <span className="text-[#8b949e]">.{p.baseDomain}</span>}
     </div>
@@ -81,14 +84,15 @@ interface DisplayProps {
 }
 
 function DisplayState({ domain, hasBaseDomain, onEdit }: DisplayProps): JSX.Element {
+  const { t } = useI18n();
   return (
-    <Tooltip content="Click to edit subdomain">
+    <Tooltip content={t('service_status.click_to_edit_subdomain')}>
       <button
         onClick={onEdit}
         className="mb-3 block truncate text-left text-xs text-[#8b949e] hover:text-[#c9d1d9]"
       >
         {domain}
-        {!hasBaseDomain && <span className="ml-1 text-[#f85149]">(no domain)</span>}
+        {!hasBaseDomain && <span className="ml-1 text-[#f85149]">{t('proxy.no_domain')}</span>}
       </button>
     </Tooltip>
   );

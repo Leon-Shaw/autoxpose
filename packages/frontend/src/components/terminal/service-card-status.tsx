@@ -4,6 +4,7 @@ import { api, type ServiceRecord } from '../../lib/api';
 import { TERMINAL_COLORS } from './theme';
 import { Tooltip } from './tooltip';
 import { SubdomainDialog } from './subdomain-dialog';
+import { useI18n } from '../../hooks/use-i18n';
 
 interface StatusBadgeProps {
   serviceId: string;
@@ -96,15 +97,16 @@ function ServiceWarnings({
   liveStatus: string | null;
   isWildcardMode: boolean;
 }): JSX.Element {
+  const { t } = useI18n();
   const warnings = parseWarnings(service.configWarnings);
   const showUnreachableReasons = isExposed && liveStatus === 'offline';
-  const badges = buildWarningBadges(warnings, showUnreachableReasons, service, isWildcardMode);
+  const badges = buildWarningBadges(warnings, showUnreachableReasons, service, isWildcardMode, t);
   const exposureIcons = [
     service.exposureSource === 'discovered' && {
       type: 'discovered',
-      msg: 'Discovered existing configuration',
+      msg: t('service_status.discovered_config'),
     },
-    service.exposureSource === 'auto' && { type: 'auto', msg: 'Auto-exposed on discovery' },
+    service.exposureSource === 'auto' && { type: 'auto', msg: t('service_status.auto_exposed') },
   ].filter(Boolean) as Array<{ type: string; msg: string }>;
 
   return (
@@ -130,18 +132,19 @@ function MigrateSubdomainButton({
   service: ServiceRecord;
   warnings: ReturnType<typeof parseWarnings>;
 }): JSX.Element | null {
+  const { t } = useI18n();
   const [showDialog, setShowDialog] = useState(false);
 
   if (!warnings.subdomain_mismatch) return null;
 
   return (
     <>
-      <Tooltip content="Resolve subdomain conflict. Choose which subdomain to keep.">
+      <Tooltip content={t('service_status.resolve_conflict')}>
         <button
           onClick={() => setShowDialog(true)}
           className="px-2 py-0.5 text-xs bg-yellow-900/30 text-yellow-400 border border-yellow-700/50 rounded hover:bg-yellow-900/50"
         >
-          Resolve
+          {t('service_status.resolve')}
         </button>
       </Tooltip>
       {showDialog && <SubdomainDialog service={service} onClose={() => setShowDialog(false)} />}
@@ -157,6 +160,7 @@ function PartialExposureButtons({
   showUnreachableReasons: boolean;
   isWildcardMode: boolean;
 }): JSX.Element | null {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const dnsOnlyMutation = useMutation({
@@ -181,16 +185,16 @@ function PartialExposureButtons({
         <PartialButton
           onClick={() => dnsOnlyMutation.mutate(service.id)}
           isPending={dnsOnlyMutation.isPending}
-          label="Create DNS"
-          title="Create DNS record for this service"
+          label={t('service_status.create_dns')}
+          title={t('service_status.create_dns_record')}
         />
       )}
       {showProxyButton && (
         <PartialButton
           onClick={() => proxyOnlyMutation.mutate(service.id)}
           isPending={proxyOnlyMutation.isPending}
-          label="Create Proxy"
-          title="Create proxy host for this service"
+          label={t('service_status.create_proxy')}
+          title={t('service_status.create_proxy_host')}
         />
       )}
     </>
@@ -208,6 +212,7 @@ function PartialButton({
   label: string;
   title: string;
 }): JSX.Element {
+  const { t } = useI18n();
   return (
     <Tooltip content={title}>
       <button
@@ -215,7 +220,7 @@ function PartialButton({
         disabled={isPending}
         className="px-2 py-0.5 text-xs bg-red-900/30 text-red-400 border border-red-700/50 rounded hover:bg-red-900/50 disabled:opacity-50"
       >
-        {isPending ? 'Creating...' : label}
+        {isPending ? t('common.creating') : label}
       </button>
     </Tooltip>
   );
@@ -259,7 +264,8 @@ function buildWarningBadges(
   warnings: ReturnType<typeof parseWarnings>,
   showUnreachableReasons: boolean,
   service: ServiceRecord,
-  isWildcardMode: boolean
+  isWildcardMode: boolean,
+  t: any
 ): Array<{ show: boolean; type: string; msg: string }> {
   const hasMismatch = service.dnsExists !== service.proxyExists;
   const { isPropagating, hideUnreachable } = calculatePropagationState(service);
@@ -268,31 +274,31 @@ function buildWarningBadges(
   const showUnknown = showUnreachableReasons && !shouldHide;
 
   return [
-    { show: isPropagating, type: 'Propagating', msg: 'DNS propagating, please wait' },
+    { show: isPropagating, type: t('service_status.propagating'), msg: t('service_status.dns_propagating_wait') },
     {
       show: localDnsLag,
-      type: 'Local DNS',
-      msg: 'May work externally. Local DNS cache needs time to update.',
+      type: t('service_status.local_dns'),
+      msg: t('service_status.may_work_externally'),
     },
-    { show: showDnsMissingBadge(service, isWildcardMode), type: 'DNS', msg: 'DNS record missing' },
+    { show: showDnsMissingBadge(service, isWildcardMode), type: 'DNS', msg: t('service_status.dns_missing') },
     {
       show: hasMismatch && service.proxyExists === false && service.dnsExists === true,
       type: 'Proxy',
-      msg: 'Proxy host missing',
+      msg: t('service_status.proxy_missing'),
     },
-    { show: showUnknown && service.dnsExists === null, type: 'DNS?', msg: 'DNS status unknown' },
+    { show: showUnknown && service.dnsExists === null, type: 'DNS?', msg: t('service_status.dns_unknown') },
     {
       show: showUnknown && service.proxyExists === null,
       type: 'Proxy?',
-      msg: 'DNS status unknown',
+      msg: t('service_status.proxy_unknown'),
     },
-    { show: warnings.port_mismatch, type: 'Port', msg: 'Port mismatch detected' },
-    { show: warnings.scheme_mismatch, type: 'Scheme', msg: 'Scheme mismatch detected' },
-    { show: warnings.ip_mismatch, type: 'IP', msg: 'IP address mismatch detected' },
+    { show: warnings.port_mismatch, type: 'Port', msg: t('service_status.port_mismatch') },
+    { show: warnings.scheme_mismatch, type: 'Scheme', msg: t('service_status.scheme_mismatch') },
+    { show: warnings.ip_mismatch, type: 'IP', msg: t('service_status.ip_mismatch') },
     {
       show: warnings.subdomain_mismatch,
       type: 'Subdomain',
-      msg: `Exposed as ${service.exposedSubdomain}, label says ${service.subdomain}`,
+      msg: t('service_status.subdomain_mismatch', { exposed: service.exposedSubdomain, label: service.subdomain }),
     },
   ];
 }
@@ -308,27 +314,28 @@ function StatusIndicator({
   proxyExists: boolean | null;
   sslPending: boolean | null;
 }): JSX.Element {
+  const { t } = useI18n();
   const getStatus = (): { tip: string; color: string; label: string } => {
     if (!isExposed)
       return {
-        tip: 'Service not exposed',
+        tip: t('service_status.not_exposed'),
         color: TERMINAL_COLORS.textMuted,
-        label: '\u25CB OFFLINE',
+        label: `\u25CB ${t('service_status.offline_label')}`,
       };
     if (liveStatus === 'checking')
-      return { tip: 'Checking...', color: TERMINAL_COLORS.warning, label: '\u25CF CHECKING' };
+      return { tip: t('service_status.checking'), color: TERMINAL_COLORS.warning, label: `\u25CF ${t('service_status.checking_label')}` };
     if (liveStatus === 'online' && sslPending)
       return {
-        tip: 'Service reachable via HTTP only. SSL setup pending or failed.',
+        tip: t('service_status.http_only_tip'),
         color: TERMINAL_COLORS.warning,
-        label: '\u25CF HTTP ONLY',
+        label: `\u25CF ${t('service_status.http_only_label')}`,
       };
     if (liveStatus === 'online')
-      return { tip: 'Domain reachable', color: TERMINAL_COLORS.success, label: '\u25CF ONLINE' };
+      return { tip: t('service_status.domain_reachable'), color: TERMINAL_COLORS.success, label: `\u25CF ${t('service_status.online_label')}` };
     return {
-      tip: 'Domain not reachable',
+      tip: t('service_status.domain_not_reachable'),
       color: TERMINAL_COLORS.error,
-      label: '\u25CF UNREACHABLE',
+      label: `\u25CF ${t('service_status.unreachable_label')}`,
     };
   };
 

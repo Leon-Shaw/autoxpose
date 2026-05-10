@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ServiceRecord } from '../../lib/api';
 import { useTagPreferences } from '../../hooks/use-tag-preferences';
+import { useI18n } from '../../hooks/use-i18n';
 
 const TAG_COLORS: Record<string, string> = {
   ai: '#ff6ec7',
@@ -93,6 +94,7 @@ export function TagFilters({
   onTagsChange,
   tagCounts,
 }: TagFiltersProps): JSX.Element {
+  const { t } = useI18n();
   const { showTags } = useTagPreferences();
   const availableTags = Object.keys(tagCounts).sort((a, b) => {
     const countDiff = (tagCounts[b] || 0) - (tagCounts[a] || 0);
@@ -119,13 +121,13 @@ export function TagFilters({
   return (
     <div className="flex flex-col gap-2 mb-4">
       <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-400">Filter by category:</div>
+        <div className="text-xs text-gray-400">{t('tag.filter_by_category')}</div>
         {selectedTags.length > 0 && (
           <button
             onClick={clearFilters}
             className="text-[10px] text-gray-500 hover:text-gray-400 transition-colors"
           >
-            Clear
+            {t('tag.clear')}
           </button>
         )}
       </div>

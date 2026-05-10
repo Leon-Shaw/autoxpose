@@ -1,4 +1,5 @@
 import { TERMINAL_COLORS } from './theme';
+import { useI18n } from '../../hooks/use-i18n';
 
 export type TestStatus = 'idle' | 'testing' | 'success' | 'error';
 export type TestState = { status: TestStatus; error?: string };
@@ -10,11 +11,13 @@ interface TestButtonProps {
 }
 
 export function TestConnectionButton({ status, error, onTest }: TestButtonProps): JSX.Element {
+  const { t } = useI18n();
+  
   const getButtonContent = (): string => {
-    if (status === 'testing') return 'Testing...';
-    if (status === 'success') return '✓ Connected';
-    if (status === 'error') return '✗ Failed';
-    return 'Test Connection';
+    if (status === 'testing') return t('test.testing');
+    if (status === 'success') return t('test.connected');
+    if (status === 'error') return t('test.failed');
+    return t('test.test_connection');
   };
 
   const getButtonStyle = (): string => {

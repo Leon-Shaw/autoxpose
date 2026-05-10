@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Tooltip } from './tooltip';
+import { useI18n } from '../../hooks/use-i18n';
 
 const ORPHAN_BADGE_KEY = 'autoxpose:orphan-badge-minimized';
 
@@ -10,6 +11,7 @@ export function OrphanBadge({
   count: number;
   onClick: () => void;
 }): JSX.Element | null {
+  const { t } = useI18n();
   const [isMinimized, setIsMinimized] = useState(() => {
     try {
       return localStorage.getItem(ORPHAN_BADGE_KEY) === 'true';
@@ -40,27 +42,27 @@ export function OrphanBadge({
 
   if (isMinimized) {
     return (
-      <Tooltip content="Container stopped but DNS/proxy records still exist">
+      <Tooltip content={t('status.container_stopped')}>
         <button
           onClick={handleExpand}
           className="h-2 w-2 rounded-full bg-[#f0883e] transition-transform hover:scale-125"
-          aria-label="Expand orphaned services badge"
+          aria-label={t('status.expand_orphaned')}
         />
       </Tooltip>
     );
   }
 
   return (
-    <Tooltip content="Container stopped but DNS/proxy records still exist">
+    <Tooltip content={t('status.container_stopped')}>
       <button
         onClick={onClick}
         className="group flex items-center gap-1.5 rounded bg-[#f0883e20] px-2 py-1 transition-all hover:bg-[#f0883e30]"
       >
-        <span className="text-xs font-medium text-[#f0883e]">{count} orphaned</span>
+        <span className="text-xs font-medium text-[#f0883e]">{count} {t('status.orphaned')}</span>
         <button
           onClick={handleMinimize}
           className="flex h-3.5 w-3.5 items-center justify-center rounded text-[#f0883e] opacity-0 transition-opacity hover:bg-[#f0883e40] group-hover:opacity-100"
-          aria-label="Minimize badge"
+          aria-label={t('status.minimize_badge')}
         >
           −
         </button>
@@ -80,6 +82,7 @@ export function NetworkWarning({
   onDismiss: () => void;
   severity: 'error' | 'warning' | 'info';
 }): JSX.Element {
+  const { t } = useI18n();
   const colors = {
     error: { text: 'text-[#f85149]', bg: 'bg-[#f8514915]', border: 'border-[#f8514950]' },
     warning: { text: 'text-[#f0883e]', bg: 'bg-[#f0883e15]', border: 'border-[#f0883e50]' },
@@ -87,9 +90,9 @@ export function NetworkWarning({
   };
 
   const icons = {
-    error: '\u2717',
-    warning: '\u26A0',
-    info: '\u2139',
+    error: '✗',
+    warning: '⚠',
+    info: 'ℹ',
   };
 
   const { text, bg, border } = colors[severity];
@@ -104,11 +107,11 @@ export function NetworkWarning({
         <span className="text-xs">{message}</span>
       </div>
       {dismissible && (
-        <Tooltip content="Dismiss">
+        <Tooltip content={t('status.dismiss')}>
           <button
             onClick={onDismiss}
             className={`rounded px-2 py-1 text-[10px] transition-colors hover:bg-[#30363d] ${text}`}
-            aria-label="Dismiss warning"
+            aria-label={t('status.dismiss_warning')}
           >
             ✕
           </button>

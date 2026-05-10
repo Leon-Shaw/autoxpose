@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { type IpState } from '../../lib/api';
+import { useI18n } from '../../hooks/use-i18n';
 
 export type IpMsg = {
   text: string;
@@ -7,23 +8,23 @@ export type IpMsg = {
   severity: 'error' | 'warning' | 'info';
 };
 
-function getServerIpMessage(state: IpState, ip: string, detected: string | null): IpMsg {
+function getServerIpMessage(state: IpState, ip: string, detected: string | null, t: any): IpMsg {
   const msgs: Record<IpState, IpMsg> = {
     missing: {
-      text: `Server IP: localhost (set SERVER_IP)`,
+      text: t('ip.server_ip_localhost'),
       dismissible: false,
       severity: 'error',
     },
-    invalid: { text: `Server IP: invalid format "${ip}"`, dismissible: false, severity: 'error' },
+    invalid: { text: t('ip.server_ip_invalid', { ip }), dismissible: false, severity: 'error' },
     placeholder: {
-      text: `Server IP: placeholder "${ip}" (set real IP)`,
+      text: t('ip.server_ip_placeholder', { ip }),
       dismissible: false,
       severity: 'error',
     },
     valid: { text: '', dismissible: false, severity: 'info' },
     'bridge-autodetected': { text: '', dismissible: false, severity: 'info' },
     mismatch: {
-      text: detected ? `Server IP: ${ip} but detected ${detected} (VPN?)` : '',
+      text: detected ? t('ip.server_ip_mismatch', { ip, detected }) : '',
       dismissible: true,
       severity: 'warning',
     },
@@ -31,18 +32,18 @@ function getServerIpMessage(state: IpState, ip: string, detected: string | null)
   return msgs[state];
 }
 
-function getLanIpMessage(state: IpState, ip: string): IpMsg {
+function getLanIpMessage(state: IpState, ip: string, t: any): IpMsg {
   const msgs: Record<IpState, IpMsg> = {
     missing: { text: '', dismissible: false, severity: 'info' },
-    invalid: { text: `LAN IP: invalid format "${ip}"`, dismissible: false, severity: 'error' },
+    invalid: { text: t('ip.lan_ip_invalid', { ip }), dismissible: false, severity: 'error' },
     placeholder: {
-      text: `LAN IP: placeholder "${ip}" (set real IP)`,
+      text: t('ip.lan_ip_placeholder', { ip }),
       dismissible: false,
       severity: 'error',
     },
     valid: { text: '', dismissible: false, severity: 'info' },
     'bridge-autodetected': {
-      text: `LAN IP: auto-detected ${ip} (set LAN_IP if needed)`,
+      text: t('ip.lan_ip_autodetected', { ip }),
       dismissible: true,
       severity: 'info',
     },
@@ -59,13 +60,14 @@ function buildIpMessages(p: {
   det: string | null;
   proxyCfg: boolean;
   dis: Set<string>;
+  t: any;
 }): Array<IpMsg & { key: string }> {
   const res: Array<IpMsg & { key: string }> = [];
 
   if (p.srv && p.srv !== 'valid') {
     const k = `server:${p.srv}:${p.srvIp}`;
     if (!p.dis.has(k)) {
-      const m = getServerIpMessage(p.srv, p.srvIp, p.det);
+      const m = getServerIpMessage(p.srv, p.srvIp, p.det, p.t);
       if (m.text) res.push({ ...m, key: k });
     }
   }
@@ -73,7 +75,7 @@ function buildIpMessages(p: {
   if (p.lan && p.lan !== 'valid' && p.proxyCfg) {
     const k = `lan:${p.lan}:${p.lanIp}`;
     if (!p.dis.has(k)) {
-      const m = getLanIpMessage(p.lan, p.lanIp);
+      const m = getLanIpMessage(p.lan, p.lanIp, p.t);
       if (m.text) res.push({ ...m, key: k });
     }
   }
@@ -90,6 +92,7 @@ export function useIpMessages(params: {
   proxyConfigured: boolean;
   dismissed: Set<string>;
 }): Array<IpMsg & { key: string }> {
+  const { t } = useI18n();
   const { serverIpState, lanIpState, serverIp, lanIp, detectedIp, proxyConfigured, dismissed } =
     params;
   return useMemo(
@@ -102,7 +105,8 @@ export function useIpMessages(params: {
         det: detectedIp || null,
         proxyCfg: proxyConfigured,
         dis: dismissed,
+        t,
       }),
-    [serverIpState, lanIpState, serverIp, lanIp, detectedIp, proxyConfigured, dismissed]
+    [serverIpState, lanIpState, serverIp, lanIp, detectedIp, proxyConfigured, dismissed, t]
   );
 }

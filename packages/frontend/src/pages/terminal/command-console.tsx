@@ -4,6 +4,7 @@ import type { ServiceRecord } from '../../lib/api';
 import type { CommandTone } from './command-engine';
 import { toneColor } from './command-engine';
 import { useCommandConsole } from './use-command-console';
+import { useI18n } from '../../hooks/use-i18n';
 
 const CLICK_PAD_CLASS = 'min-h-32';
 
@@ -158,6 +159,7 @@ function PromptArea({
   onSelectSuggestion,
   onHighlight,
 }: PromptAreaProps): JSX.Element {
+  const { t } = useI18n();
   const [isFocused, setIsFocused] = React.useState(false);
   const showGhostCaret = input.length === 0 && !isFocused;
 
@@ -199,11 +201,11 @@ function PromptArea({
           <span className="rounded border border-[#30363d] bg-[#0f141a] px-2 py-0.5 text-[#c9d1d9]">
             Tab
           </span>
-          <span>select</span>
+          <span>{t('command.tab_select')}</span>
           <span className="rounded border border-[#30363d] bg-[#0f141a] px-2 py-0.5 text-[#c9d1d9]">
             ↑ ↓
           </span>
-          <span>history</span>
+          <span>{t('command.history')}</span>
         </div>
       )}
       <div className="h-6 w-full" />

@@ -4,6 +4,7 @@ import { type SettingsStatus, api } from '../../lib/api';
 import { ConfirmDialog } from './confirm-dialog';
 import { DnsConfigSection, ProxyConfigSection } from './config';
 import { Tooltip } from './tooltip';
+import { useI18n } from '../../hooks/use-i18n';
 
 function downloadFile(content: string, filename: string): void {
   const blob = new Blob([content], { type: 'application/json' });
@@ -112,24 +113,25 @@ interface HeaderDialogsProps {
 }
 
 function HeaderDialogs(props: HeaderDialogsProps): JSX.Element {
+  const { t } = useI18n();
   return (
     <>
       <ConfirmDialog
         isOpen={props.showWarning}
-        title="Export Settings"
-        message="This file contains sensitive API keys and credentials. Store it securely and delete after importing. Do not share this file or commit it to version control."
-        confirmText="Export Anyway"
-        cancelText="Cancel"
+        title={t('settings.export_settings')}
+        message={t('settings.export_warning')}
+        confirmText={t('settings.export_anyway')}
+        cancelText={t('settings.cancel')}
         variant="warning"
         onConfirm={props.onConfirmExport}
         onCancel={props.onCloseExport}
       />
       <ConfirmDialog
         isOpen={props.showReset}
-        title="Reset autoxpose"
-        message="This clears saved settings and local autoxpose state. It does not delete DNS records or proxy hosts outside autoxpose."
-        confirmText={props.isResetting ? 'Resetting...' : 'Reset autoxpose'}
-        cancelText="Cancel"
+        title={t('settings.reset_autoxpose')}
+        message={t('settings.reset_warning')}
+        confirmText={props.isResetting ? t('common.resetting') : t('settings.reset_autoxpose')}
+        cancelText={t('settings.cancel')}
         variant="warning"
         confirmDisabled={props.isResetting}
         onConfirm={props.onReset}
@@ -147,43 +149,45 @@ interface HeaderActionsProps {
 }
 
 function HeaderActions(props: HeaderActionsProps): JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-3">
-      <Tooltip content="Export settings to JSON file">
+      <Tooltip content={t('settings.export_settings_to_json')}>
         <button
           onClick={props.onExport}
           className="text-xs text-[#58a6ff] transition-colors hover:text-[#79c0ff]"
         >
-          Export
+          {t('settings.export_settings')}
         </button>
       </Tooltip>
-      <Tooltip content="Import settings from JSON file">
+      <Tooltip content={t('settings.import_settings_from_json')}>
         <button
           onClick={props.onImport}
           className="text-xs text-[#58a6ff] transition-colors hover:text-[#79c0ff]"
         >
-          Import
+          {t('settings.import_settings')}
         </button>
       </Tooltip>
-      <Tooltip content="Clear saved settings and local autoxpose state">
+      <Tooltip content={t('settings.clear_saved_settings')}>
         <button
           onClick={props.onOpenReset}
           className="text-xs text-[#d29922] transition-colors hover:text-[#e3b341]"
         >
-          Reset
+          {t('settings.reset_autoxpose')}
         </button>
       </Tooltip>
       <button
         onClick={props.onClose}
         className="text-xs text-[#8b949e] transition-colors hover:text-[#c9d1d9]"
       >
-        Close
+        {t('dialog.close')}
       </button>
     </div>
   );
 }
 
 function PanelHeader({ onClose, onReset, isResetting }: PanelHeaderProps): JSX.Element {
+  const { t } = useI18n();
   const [showWarning, setShowWarning] = useState(false);
   const [showReset, setShowReset] = useState(false);
 
@@ -208,7 +212,7 @@ function PanelHeader({ onClose, onReset, isResetting }: PanelHeaderProps): JSX.E
         onCloseReset={() => setShowReset(false)}
       />
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-[#c9d1d9]">Configuration</h3>
+        <h3 className="text-sm font-bold text-[#c9d1d9]">{t('settings.configuration')}</h3>
         <HeaderActions
           onExport={handleExport}
           onImport={() => void handleImport()}

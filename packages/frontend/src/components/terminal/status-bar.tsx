@@ -4,6 +4,7 @@ import { type IpMsg, useIpMessages } from './ip-messages';
 import { NetworkWarning, OrphanBadge } from './status-bar-components';
 import { TERMINAL_COLORS } from './theme';
 import { Tooltip } from './tooltip';
+import { useI18n } from '../../hooks/use-i18n';
 
 const DISMISSED_KEY = 'autoxpose:dismissed-warnings';
 
@@ -101,6 +102,7 @@ interface StatusBarContentProps {
 }
 
 function StatusBarContent(props: StatusBarContentProps): JSX.Element {
+  const { t } = useI18n();
   const isWildcardMode = props.settings?.wildcard?.enabled ?? false;
   const wildcardDomain = props.settings?.wildcard?.domain;
 
@@ -158,8 +160,9 @@ function StatusBarContent(props: StatusBarContentProps): JSX.Element {
 }
 
 function WildcardIndicator({ domain }: { domain: string }): JSX.Element {
+  const { t } = useI18n();
   return (
-    <Tooltip content="Wildcard mode: DNS and SSL handled by wildcard certificate">
+    <Tooltip content={t('topology.wildcard_mode')}>
       <span className="flex items-center gap-1" style={{ color: TERMINAL_COLORS.success }}>
         <span>{'\u2713'}</span>
         <span className="font-mono">*.{domain}</span>
@@ -202,16 +205,16 @@ function useConnectionStates(settings: SettingsStatus | null | undefined): {
   return { dnsState, proxyState };
 }
 
-function getStateInfo(state: ConnectionState): { icon: string; color: string; tip: string } {
+function getStateInfo(state: ConnectionState, t: any): { icon: string; color: string; tip: string } {
   switch (state) {
     case 'connected':
-      return { icon: '\u2713', color: TERMINAL_COLORS.success, tip: 'Connected' };
+      return { icon: '\u2713', color: TERMINAL_COLORS.success, tip: t('common.connected') };
     case 'checking':
-      return { icon: '\u25CF', color: TERMINAL_COLORS.warning, tip: 'Testing...' };
+      return { icon: '\u25CF', color: TERMINAL_COLORS.warning, tip: t('status.testing') };
     case 'error':
-      return { icon: '\u2717', color: TERMINAL_COLORS.error, tip: 'Connection failed' };
+      return { icon: '\u2717', color: TERMINAL_COLORS.error, tip: t('status.connection_failed') };
     default:
-      return { icon: '\u25CB', color: TERMINAL_COLORS.textMuted, tip: 'Not configured' };
+      return { icon: '\u25CB', color: TERMINAL_COLORS.textMuted, tip: t('status.not_configured') };
   }
 }
 
@@ -222,8 +225,9 @@ interface StatusIndicatorProps {
 }
 
 function StatusIndicator({ label, state, provider }: StatusIndicatorProps): JSX.Element {
-  const { icon, color, tip } = getStateInfo(state);
-  const text = provider || 'none';
+  const { t } = useI18n();
+  const { icon, color, tip } = getStateInfo(state, t);
+  const text = provider || t('common.none');
   const tooltip = `${label}: ${tip}`;
 
   return (
@@ -242,11 +246,12 @@ interface StatusMessageProps {
 }
 
 function StatusMessage({ dnsState, proxyState }: StatusMessageProps): JSX.Element | null {
+  const { t } = useI18n();
   if (dnsState === 'connected' && proxyState === 'connected') return null;
 
   const messages: string[] = [];
-  if (dnsState !== 'connected') messages.push('Configure DNS provider');
-  if (proxyState !== 'connected') messages.push('Configure Proxy manager');
+  if (dnsState !== 'connected') messages.push(t('status.configure_dns'));
+  if (proxyState !== 'connected') messages.push(t('status.configure_proxy'));
 
   return <span className="text-[#f85149]">{messages.join(' & ')}</span>;
 }
@@ -264,18 +269,19 @@ function ConfigureButton({
   warningCount,
   onClick,
 }: ConfigureButtonProps): JSX.Element {
+  const { t } = useI18n();
   const arrow = isExpanded ? '\u25BC' : '\u25B2';
   const baseClass = 'flex items-center gap-1 rounded px-2 py-1 transition-colors';
   const colorClass = needsSetup
     ? 'bg-[#f8514930] text-[#f85149] hover:bg-[#f8514950]'
     : 'text-[#8b949e] hover:bg-[#30363d] hover:text-[#c9d1d9]';
 
-  const label = needsSetup ? 'Setup Required' : 'Configure';
+  const label = needsSetup ? t('status.setup_required') : t('settings.configure');
   const tooltip = isExpanded
-    ? 'Close settings'
+    ? t('dialog.close')
     : warningCount > 0
-      ? `Open settings (${warningCount} warning${warningCount > 1 ? 's' : ''})`
-      : 'Open settings panel';
+      ? `${t('settings.configure')} (${warningCount} ${t('status.warning', { count: warningCount })})`
+      : t('status.open_settings');
 
   return (
     <Tooltip content={tooltip} shortcut="Ctrl+,">

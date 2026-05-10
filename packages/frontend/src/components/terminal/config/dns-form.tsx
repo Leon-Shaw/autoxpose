@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api, type SettingsStatus } from '../../../lib/api';
 import { FormActions, FormInput, FormSelect } from '../form-components';
 import { TestConnectionButton, type TestState } from '../test-button';
+import { useI18n } from '../../../hooks/use-i18n';
 
 export const DNS_PROVIDERS = [
   { value: 'cloudflare', label: 'Cloudflare' },
@@ -10,6 +11,13 @@ export const DNS_PROVIDERS = [
   { value: 'digitalocean', label: 'DigitalOcean' },
   { value: 'porkbun', label: 'Porkbun' },
 ];
+
+export const DNS_PROVIDER_LABELS: Record<string, string> = {
+  cloudflare: 'Cloudflare',
+  netlify: 'Netlify',
+  digitalocean: 'DigitalOcean',
+  porkbun: 'Porkbun',
+};
 
 interface DnsFieldsProps {
   provider: string;
@@ -35,19 +43,20 @@ function PorkbunFields(props: {
   onApiKeyChange: (v: string) => void;
   onSecretKeyChange: (v: string) => void;
 }): JSX.Element {
+  const { t } = useI18n();
   return (
     <>
       <FormInput
-        label="API Key"
+        label={t('settings.api_key')}
         type="password"
         placeholder={props.apiKeyPlaceholder}
         value={props.apiKey}
         onChange={props.onApiKeyChange}
       />
       <FormInput
-        label="Secret Key"
+        label={t('settings.secret_key')}
         type="password"
-        placeholder="Enter secret key"
+        placeholder={t('service_status.enter_secret_key')}
         value={props.secretKey}
         onChange={props.onSecretKeyChange}
       />
@@ -56,21 +65,22 @@ function PorkbunFields(props: {
 }
 
 function DnsFormFields(props: DnsFieldsProps): JSX.Element {
+  const { t } = useI18n();
   const isPorkbun = props.provider === 'porkbun';
   const needsZone = props.provider === 'cloudflare' || props.provider === 'netlify';
-  const tokenPlaceholder = props.hasToken ? 'Saved' : 'Enter token';
-  const apiKeyPlaceholder = props.hasApiKey ? 'Saved' : 'Enter API key';
+  const tokenPlaceholder = props.hasToken ? t('settings.saved') : t('settings.enter_token');
+  const apiKeyPlaceholder = props.hasApiKey ? t('settings.saved') : t('settings.enter_api_key');
 
   return (
     <>
       <FormInput
-        label="Base Domain"
+        label={t('settings.base_domain')}
         placeholder="example.com"
         value={props.domain}
         onChange={props.onDomainChange}
       />
       <FormSelect
-        label="Provider"
+        label={t('settings.provider')}
         value={props.provider}
         onChange={props.onProviderChange}
         options={DNS_PROVIDERS}
@@ -85,7 +95,7 @@ function DnsFormFields(props: DnsFieldsProps): JSX.Element {
         />
       ) : (
         <FormInput
-          label="API Token"
+          label={t('settings.token')}
           type="password"
           placeholder={tokenPlaceholder}
           value={props.token}
@@ -94,8 +104,8 @@ function DnsFormFields(props: DnsFieldsProps): JSX.Element {
       )}
       {needsZone && (
         <FormInput
-          label="Zone ID"
-          placeholder="Zone ID"
+          label={t('settings.zone_id')}
+          placeholder={t('settings.zone_id')}
           value={props.zoneId}
           onChange={props.onZoneIdChange}
         />
@@ -187,6 +197,7 @@ interface DnsEditFormProps {
 }
 
 export function DnsEditForm({ current, onDone }: DnsEditFormProps): JSX.Element {
+  const { t } = useI18n();
   const form = useDnsForm(current, onDone);
 
   return (
@@ -214,12 +225,13 @@ export function DnsEditForm({ current, onDone }: DnsEditFormProps): JSX.Element 
         onSave={form.mutate}
         onCancel={onDone}
       />
-      {form.isError && <p className="text-xs text-[#f85149]">Failed to save settings</p>}
+      {form.isError && <p className="text-xs text-[#f85149]">{t('settings.failed_to_save')}</p>}
     </div>
   );
 }
 
 export function DnsDisplay({ current }: { current: SettingsStatus['dns'] | null }): JSX.Element {
+  const { t } = useI18n();
   const [testState, setTestState] = useState<TestState>({ status: 'idle' });
   const providerLabel = DNS_PROVIDERS.find(p => p.value === current?.provider)?.label;
 
@@ -230,10 +242,10 @@ export function DnsDisplay({ current }: { current: SettingsStatus['dns'] | null 
       setTestState(
         result.ok
           ? { status: 'success' }
-          : { status: 'error', error: result.error || 'Connection test failed' }
+          : { status: 'error', error: result.error || t('settings.connection_test_failed') }
       );
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Connection test failed';
+      const message = err instanceof Error ? err.message : t('settings.connection_test_failed');
       setTestState({ status: 'error', error: message });
     }
   };
@@ -242,19 +254,19 @@ export function DnsDisplay({ current }: { current: SettingsStatus['dns'] | null 
     <div className="space-y-2 text-xs text-[#8b949e]">
       {current?.domain && (
         <p>
-          <span className="text-[#484f58]">Domain:</span> {current.domain}
+          <span className="text-[#484f58]">{t('settings.domain')}:</span> {current.domain}
         </p>
       )}
       <p>
-        <span className="text-[#484f58]">Provider:</span> {providerLabel}
+        <span className="text-[#484f58]">{t('settings.provider')}:</span> {providerLabel}
       </p>
       {current?.config?.zoneId && (
         <p>
-          <span className="text-[#484f58]">Zone ID:</span> {current.config.zoneId}
+          <span className="text-[#484f58]">{t('settings.zone_id')}:</span> {current.config.zoneId}
         </p>
       )}
       <p>
-        <span className="text-[#484f58]">Credentials:</span> Saved
+        <span className="text-[#484f58]">{t('settings.credentials')}:</span> {t('settings.saved')}
       </p>
       <TestConnectionButton status={testState.status} error={testState.error} onTest={handleTest} />
     </div>

@@ -1,3 +1,5 @@
+import { useI18n } from '../../hooks/use-i18n';
+
 interface ConfirmDialogProps {
   isOpen: boolean;
   title: string;
@@ -27,7 +29,7 @@ export function ConfirmDialog({
   title,
   message,
   confirmText,
-  cancelText = 'Cancel',
+  cancelText,
   variant = 'default',
   showCheckbox = false,
   checkboxLabel,
@@ -37,6 +39,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps): JSX.Element | null {
+  const { t } = useI18n();
+  
   if (!isOpen) return null;
 
   return (
@@ -63,7 +67,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             className="rounded border border-[#30363d] px-4 py-2 text-sm text-[#c9d1d9] transition-colors hover:bg-[#30363d]"
           >
-            {cancelText}
+            {cancelText || t('dialog.cancel')}
           </button>
           <button
             onClick={onConfirm}

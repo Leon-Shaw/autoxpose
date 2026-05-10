@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { TerminalServiceCard } from '../../components/terminal';
 import { useBulkStatusCheck } from '../../hooks/use-bulk-status-check';
 import { type ServiceRecord } from '../../lib/api';
+import { useI18n } from '../../hooks/use-i18n';
 
 interface ServiceGridProps {
   services: ServiceRecord[];
@@ -38,6 +39,7 @@ export function ServiceGrid({
   scanTrigger,
   isWildcardMode,
 }: ServiceGridProps): JSX.Element {
+  const { t } = useI18n();
   const { statusMap, checkServices } = useBulkStatusCheck(scanTrigger);
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function ServiceGrid({
         const blockedReason = !canExpose
           ? canExposeReason
           : !service.subdomain
-            ? 'Set subdomain first'
+            ? t('empty.set_subdomain_first')
             : undefined;
         return (
           <TerminalServiceCard
@@ -87,19 +89,20 @@ interface EmptyServiceGridProps {
 }
 
 function EmptyServiceGrid({ onScan }: EmptyServiceGridProps): JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="rounded border border-dashed border-[#30363d] p-8 text-center">
       <div className="mb-4 text-4xl text-[#484f58]">{'\u2699'}</div>
-      <p className="text-[#8b949e]">No services discovered yet.</p>
+      <p className="text-[#8b949e]">{t('empty.no_services_discovered')}</p>
       <p className="mt-2 text-sm text-[#8b949e]">
-        Add <code className="rounded bg-[#21262d] px-1 text-[#f0883e]">autoxpose.enable=true</code>{' '}
-        to your container labels
+        {t('empty.add_label_hint')} <code className="rounded bg-[#21262d] px-1 text-[#f0883e]">{t('empty.label_code')}</code>{' '}
+        {t('empty.to_container_labels')}
       </p>
       <button
         onClick={onScan}
         className="mt-6 rounded bg-yellow-500 px-6 py-2 text-sm font-semibold text-black transition-all hover:bg-yellow-400 hover:scale-105"
       >
-        ↻ Scan for Containers
+        {t('empty.scan_for_containers')}
       </button>
     </div>
   );

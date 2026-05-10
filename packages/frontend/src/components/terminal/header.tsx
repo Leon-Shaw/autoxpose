@@ -3,8 +3,10 @@ import { TERMINAL_COLORS } from './theme';
 import { Tooltip } from './tooltip';
 import { TrafficLightButton } from './traffic-light';
 import { TopologyPanel } from './topology-panel';
+import { LanguageSwitcher } from './language-switcher';
 import { usePlatform } from '../../hooks/use-platform';
 import { useTagPreferences } from '../../hooks/use-tag-preferences';
+import { useI18n } from '../../hooks/use-i18n';
 import { Logo } from '../logo';
 
 interface ServiceItem {
@@ -33,10 +35,10 @@ interface TerminalHeaderProps {
   platformName?: string | null;
 }
 
-function getStatusInfo(status: TerminalHeaderProps['connectionStatus']): [string, string] {
-  if (status === 'connected') return [TERMINAL_COLORS.success, 'Connected'];
-  if (status === 'connecting') return [TERMINAL_COLORS.warning, 'Connecting...'];
-  return [TERMINAL_COLORS.error, 'Disconnected'];
+function getStatusInfo(status: TerminalHeaderProps['connectionStatus'], t: (key: string) => string): [string, string] {
+  if (status === 'connected') return [TERMINAL_COLORS.success, t('common.connected')];
+  if (status === 'connecting') return [TERMINAL_COLORS.warning, t('common.connecting')];
+  return [TERMINAL_COLORS.error, t('common.disconnected')];
 }
 
 interface TrafficLightsProps {
@@ -51,26 +53,27 @@ interface TrafficLightsProps {
 
 function TrafficLights(p: TrafficLightsProps): JSX.Element {
   const { modKey, altKey } = usePlatform();
+  const { t } = useI18n();
 
   return (
     <div className="flex items-center gap-2">
       <TrafficLightButton
         color="red"
-        tooltip="Unexpose all"
+        tooltip={t('header.unexpose_all')}
         shortcut={`${modKey}+${altKey}+U`}
         onClick={p.onUnexposeAll}
         disabled={p.exposedCount === 0}
       />
       <TrafficLightButton
         color="yellow"
-        tooltip="Scan containers"
+        tooltip={t('header.scan_containers')}
         shortcut={`${modKey}+${altKey}+S`}
         onClick={p.onScan}
         disabled={p.isScanning}
       />
       <TrafficLightButton
         color="green"
-        tooltip="Expose all"
+        tooltip={t('header.expose_all')}
         shortcut={`${modKey}+${altKey}+E`}
         onClick={p.onExposeAll}
         disabled={p.serviceCount === 0 || p.exposedCount === p.serviceCount || !p.canExpose}
@@ -90,8 +93,9 @@ function ServerStatus({
   serverName: string;
   pulseClass: string;
 }): JSX.Element {
+  const { t } = useI18n();
   return (
-    <Tooltip content={`${statusText} to ${serverName}`}>
+    <Tooltip content={t('common.connected_to', { status: statusText, server: serverName })}>
       <div className="flex items-center gap-2 text-xs">
         <span
           className={`inline-block h-2 w-2 rounded-full ${pulseClass}`}
@@ -104,6 +108,7 @@ function ServerStatus({
 }
 
 export function TerminalHeader(props: TerminalHeaderProps): JSX.Element {
+  const { t } = useI18n();
   const {
     serviceCount,
     exposedCount,
@@ -115,10 +120,10 @@ export function TerminalHeader(props: TerminalHeaderProps): JSX.Element {
     dnsConfigured = false,
     proxyConfigured = false,
   } = props;
-  const [statusColor, statusText] = getStatusInfo(connectionStatus);
+  const [statusColor, statusText] = getStatusInfo(connectionStatus, t);
+  const svcLabel = serviceCount === 1 ? t('common.service') : t('common.services');
   const [topologyOpen, setTopologyOpen] = useState(false);
   const pulseClass = connectionStatus === 'connected' ? 'animate-pulse' : '';
-  const svcLabel = serviceCount === 1 ? 'service' : 'services';
   const handleLogoClick = (): void => {
     window.location.href = '/';
   };
@@ -166,6 +171,7 @@ interface HeaderLeftSectionProps extends TerminalHeaderProps {
 
 function HeaderLeftSection(props: HeaderLeftSectionProps): JSX.Element {
   const { showTags, setShowTags } = useTagPreferences();
+  const { t } = useI18n();
 
   return (
     <div className="flex items-center gap-3">
@@ -180,6 +186,7 @@ function HeaderLeftSection(props: HeaderLeftSectionProps): JSX.Element {
           className="text-white transition-all duration-300 group-hover:rotate-[15deg] group-hover:text-[#58a6ff]"
         />
       </button>
+      <LanguageSwitcher />
       <TrafficLights
         onUnexposeAll={props.onUnexposeAll}
         onScan={props.onScan}
@@ -190,9 +197,9 @@ function HeaderLeftSection(props: HeaderLeftSectionProps): JSX.Element {
         canExpose={props.canExpose}
       />
       <span className="text-xs text-[#8b949e]">
-        {props.serviceCount} {props.svcLabel} | {props.exposedCount} exposed
+        {props.serviceCount} {props.svcLabel} | {props.exposedCount} {t('common.exposed')}
       </span>
-      <Tooltip content="Network Topology">
+      <Tooltip content={t('header.network_topology')}>
         <button
           type="button"
           onClick={props.onTopologyToggle}
@@ -205,7 +212,7 @@ function HeaderLeftSection(props: HeaderLeftSectionProps): JSX.Element {
           ∴
         </button>
       </Tooltip>
-      <Tooltip content={showTags ? 'Hide tags' : 'Show tags'}>
+      <Tooltip content={showTags ? t('header.hide_tags') : t('header.show_tags')}>
         <button
           type="button"
           onClick={() => setShowTags(!showTags)}

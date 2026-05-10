@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { generateTopologyASCII, ServicesDisplay, TopologyNode } from './topology';
+import { useI18n } from '../../hooks/use-i18n';
 
 interface ServiceItem {
   id: string;
@@ -25,25 +26,26 @@ function TopologyVisualization({
   proxyConfigured,
   platformName,
 }: TopologyVisualizationProps): JSX.Element {
+  const { t } = useI18n();
   const exposedServices = services.filter(s => s.enabled);
   const bothConfigured = dnsConfigured && proxyConfigured;
 
   return (
     <div className="flex flex-col items-center gap-4 p-4">
-      <TopologyNode emoji="docker" label="Docker" isDocker platformName={platformName} />
+      <TopologyNode emoji="docker" label={t('topology.docker')} isDocker platformName={platformName} />
 
       <div className="text-[#6e7681] text-lg">↓</div>
       <ServicesDisplay services={exposedServices} />
 
       <div className="text-[#6e7681] text-lg">↓</div>
 
-      <TopologyNode emoji="dns" label="DNS" configured={dnsConfigured} provider={dnsProvider} />
+      <TopologyNode emoji="dns" label={t('settings.dns')} configured={dnsConfigured} provider={dnsProvider} />
 
       <div className="text-[#6e7681] text-lg">↓</div>
 
       <TopologyNode
         emoji="proxy"
-        label="Proxy"
+        label={t('settings.proxy')}
         configured={proxyConfigured}
         provider={proxyProvider}
       />
@@ -52,7 +54,7 @@ function TopologyVisualization({
 
       <TopologyNode
         emoji="internet"
-        label="Internet"
+        label={t('topology.internet')}
         isInternet
         bothConfigured={bothConfigured}
         statusText={bothConfigured ? '✓' : '✗'}
@@ -110,6 +112,7 @@ function TopologyModalContent({
   proxyConfigured,
   platformName,
 }: TopologyModalContentProps): JSX.Element {
+  const { t } = useI18n();
   return (
     <div
       className="mx-4 w-full max-w-5xl rounded-lg border border-[#30363d]/50 bg-gradient-to-br from-[#1c2128]/65 to-[#161b22]/70 shadow-2xl shadow-[#58a6ff]/10 backdrop-blur-md"
@@ -117,7 +120,7 @@ function TopologyModalContent({
     >
       <div className="flex items-center justify-between border-b border-[#30363d]/50 bg-[#0d1117]/30 px-6 py-4">
         <div id="topology-title" className="text-base font-semibold text-[#e6edf3]">
-          Network Topology
+          {t('header.network_topology')}
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -125,12 +128,12 @@ function TopologyModalContent({
             className="flex items-center gap-2 rounded border border-[#30363d] px-3 py-1.5 text-xs transition-colors hover:border-[#58a6ff] hover:text-[#58a6ff]"
           >
             <span>{copied ? '✓' : '📋'}</span>
-            <span>{copied ? 'Copied!' : 'Copy'}</span>
+            <span>{copied ? t('topology.copied') : t('topology.copy')}</span>
           </button>
           <button
             onClick={onClose}
             className="text-[#8b949e] transition-colors hover:text-[#c9d1d9]"
-            aria-label="Close"
+            aria-label={t('dialog.close')}
           >
             ✕
           </button>

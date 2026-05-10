@@ -11,6 +11,7 @@ import { ContentArea } from './terminal/content-area';
 import { useTerminalShortcuts } from './terminal/keyboard-shortcuts';
 import { ErrorView, LoadingView } from './terminal/status-views';
 import { useTerminalActions } from './terminal/use-terminal-actions';
+import { useI18n } from '../hooks/use-i18n';
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'connecting';
 
@@ -143,6 +144,7 @@ function useDashboardState(
   connectionStatus: ConnectionStatus;
   isWildcardMode: boolean;
 } {
+  const { t } = useI18n();
   const isWildcardMode = settings?.wildcard?.enabled ?? false;
   const dnsOk = isWildcardMode || (settings?.dns?.configured ?? false);
   const proxyOk = settings?.proxy?.configured ?? false;
@@ -151,8 +153,8 @@ function useDashboardState(
   const needsSetup = checkNeedsSetup(settingsLoading, dnsOk, proxyOk, serverIpBlocking);
   const canExpose = dnsOk && proxyOk && !serverIpBlocking;
   const canExposeReason = serverIpBlocking
-    ? 'Public IP not set. Set SERVER_IP before exposing.'
-    : 'Set subdomain and configure DNS/Proxy first';
+    ? t('empty.public_ip_not_set')
+    : t('service_card.set_subdomain_first');
   const exposedCount = services.filter(s => s.enabled).length;
   const connectionStatus = getConnectionStatus(settingsLoading, dnsOk, proxyOk);
 
