@@ -10,6 +10,7 @@ export const DNS_PROVIDERS = [
   { value: 'digitalocean', label: 'DigitalOcean' },
   { value: 'porkbun', label: 'Porkbun' },
   { value: 'aliyun', label: 'Aliyun' },
+  { value: 'dnspod', label: 'DNSPod' },
 ];
 
 interface DnsFieldsProps {
@@ -21,9 +22,12 @@ interface DnsFieldsProps {
   secretKey: string;
   accessKeyId: string;
   accessKeySecret: string;
+  secretId: string;
+  dnspodSecretKey: string;
   hasToken: boolean;
   hasApiKey: boolean;
   hasAccessKey: boolean;
+  hasSecretId: boolean;
   onProviderChange: (v: string) => void;
   onTokenChange: (v: string) => void;
   onZoneIdChange: (v: string) => void;
@@ -32,6 +36,8 @@ interface DnsFieldsProps {
   onSecretKeyChange: (v: string) => void;
   onAccessKeyIdChange: (v: string) => void;
   onAccessKeySecretChange: (v: string) => void;
+  onSecretIdChange: (v: string) => void;
+  onDnspodSecretKeyChange: (v: string) => void;
 }
 
 function PorkbunFields(props: {
@@ -89,9 +95,38 @@ function AliyunFields(props: {
   );
 }
 
+function DnspodFields(props: {
+  secretId: string;
+  dnspodSecretKey: string;
+  hasSecretId: boolean;
+  onSecretIdChange: (v: string) => void;
+  onDnspodSecretKeyChange: (v: string) => void;
+}): JSX.Element {
+  const placeholder = props.hasSecretId ? 'Saved' : 'Enter SecretId';
+  return (
+    <>
+      <FormInput
+        label="SecretId"
+        type="password"
+        placeholder={placeholder}
+        value={props.secretId}
+        onChange={props.onSecretIdChange}
+      />
+      <FormInput
+        label="SecretKey"
+        type="password"
+        placeholder={props.hasSecretId ? 'Saved' : 'Enter SecretKey'}
+        value={props.dnspodSecretKey}
+        onChange={props.onDnspodSecretKeyChange}
+      />
+    </>
+  );
+}
+
 function DnsFormFields(props: DnsFieldsProps): JSX.Element {
   const isPorkbun = props.provider === 'porkbun';
   const isAliyun = props.provider === 'aliyun';
+  const isDnspod = props.provider === 'dnspod';
   const needsZone = props.provider === 'cloudflare' || props.provider === 'netlify';
   const tokenPlaceholder = props.hasToken ? 'Saved' : 'Enter token';
   const apiKeyPlaceholder = props.hasApiKey ? 'Saved' : 'Enter API key';
@@ -126,6 +161,14 @@ function DnsFormFields(props: DnsFieldsProps): JSX.Element {
           onAccessKeyIdChange={props.onAccessKeyIdChange}
           onAccessKeySecretChange={props.onAccessKeySecretChange}
         />
+      ) : isDnspod ? (
+        <DnspodFields
+          secretId={props.secretId}
+          dnspodSecretKey={props.dnspodSecretKey}
+          hasSecretId={props.hasSecretId}
+          onSecretIdChange={props.onSecretIdChange}
+          onDnspodSecretKeyChange={props.onDnspodSecretKeyChange}
+        />
       ) : (
         <FormInput
           label="API Token"
@@ -156,6 +199,8 @@ type DnsFormState = {
   secretKey: string;
   accessKeyId: string;
   accessKeySecret: string;
+  secretId: string;
+  dnspodSecretKey: string;
   isPending: boolean;
   isError: boolean;
   mutate: () => void;
@@ -169,9 +214,12 @@ type DnsFormState = {
   setSecretKey: (v: string) => void;
   setAccessKeyId: (v: string) => void;
   setAccessKeySecret: (v: string) => void;
+  setSecretId: (v: string) => void;
+  setDnspodSecretKey: (v: string) => void;
   hasToken: boolean;
   hasApiKey: boolean;
   hasAccessKey: boolean;
+  hasSecretId: boolean;
 };
 
 function useDnsForm(current: SettingsStatus['dns'] | null, onDone: () => void): DnsFormState {
@@ -183,6 +231,8 @@ function useDnsForm(current: SettingsStatus['dns'] | null, onDone: () => void): 
   const [secretKey, setSecretKey] = useState('');
   const [accessKeyId, setAccessKeyId] = useState('');
   const [accessKeySecret, setAccessKeySecret] = useState('');
+  const [secretId, setSecretId] = useState('');
+  const [dnspodSecretKey, setDnspodSecretKey] = useState('');
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -195,6 +245,7 @@ function useDnsForm(current: SettingsStatus['dns'] | null, onDone: () => void): 
     if (provider === 'porkbun') return { apiKey, secretKey, domain };
     if (provider === 'digitalocean') return { token, domain };
     if (provider === 'aliyun') return { accessKeyId, accessKeySecret, domain };
+    if (provider === 'dnspod') return { secretId, secretKey: dnspodSecretKey, domain };
     return { token, zoneId, domain };
   };
 
@@ -212,7 +263,9 @@ function useDnsForm(current: SettingsStatus['dns'] | null, onDone: () => void): 
       ? apiKey || isConfigured
       : provider === 'aliyun'
         ? accessKeyId || isConfigured
-        : token || isConfigured;
+        : provider === 'dnspod'
+          ? secretId || isConfigured
+          : token || isConfigured;
 
   return {
     provider,
@@ -223,6 +276,8 @@ function useDnsForm(current: SettingsStatus['dns'] | null, onDone: () => void): 
     secretKey,
     accessKeyId,
     accessKeySecret,
+    secretId,
+    dnspodSecretKey,
     isConfigured,
     isPending: mutation.isPending,
     isError: mutation.isError,
@@ -236,9 +291,12 @@ function useDnsForm(current: SettingsStatus['dns'] | null, onDone: () => void): 
     setSecretKey,
     setAccessKeyId,
     setAccessKeySecret,
+    setSecretId,
+    setDnspodSecretKey,
     hasToken: Boolean(current?.config?.token),
     hasApiKey: Boolean(current?.config?.apiKey),
     hasAccessKey: Boolean(current?.config?.accessKeyId),
+    hasSecretId: Boolean(current?.config?.secretId),
   };
 }
 
@@ -261,9 +319,12 @@ export function DnsEditForm({ current, onDone }: DnsEditFormProps): JSX.Element 
         secretKey={form.secretKey}
         accessKeyId={form.accessKeyId}
         accessKeySecret={form.accessKeySecret}
+        secretId={form.secretId}
+        dnspodSecretKey={form.dnspodSecretKey}
         hasToken={form.hasToken}
         hasApiKey={form.hasApiKey}
         hasAccessKey={form.hasAccessKey}
+        hasSecretId={form.hasSecretId}
         onProviderChange={form.setProvider}
         onTokenChange={form.setToken}
         onZoneIdChange={form.setZoneId}
@@ -272,6 +333,8 @@ export function DnsEditForm({ current, onDone }: DnsEditFormProps): JSX.Element 
         onSecretKeyChange={form.setSecretKey}
         onAccessKeyIdChange={form.setAccessKeyId}
         onAccessKeySecretChange={form.setAccessKeySecret}
+        onSecretIdChange={form.setSecretId}
+        onDnspodSecretKeyChange={form.setDnspodSecretKey}
       />
       <FormActions
         isPending={form.isPending}
